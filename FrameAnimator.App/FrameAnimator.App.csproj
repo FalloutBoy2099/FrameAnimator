@@ -16,8 +16,8 @@
         <NoWarn>$(NoWarn);WPF0001</NoWarn>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <Authors>Kain</Authors>
-        <AssemblyVersion>2026.10.10.2</AssemblyVersion>
-        <FileVersion>2026.10.10.2</FileVersion>
+        <AssemblyVersion>2026.10.11.3</AssemblyVersion>
+        <FileVersion>2026.10.11.3</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

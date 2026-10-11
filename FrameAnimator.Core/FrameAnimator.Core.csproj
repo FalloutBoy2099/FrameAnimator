@@ -6,8 +6,8 @@
         <Nullable>enable</Nullable>
         <RootNamespace>FrameAnimator.Core</RootNamespace>
         <Description>Cœur de Frame Animator : modèle, formats FRM/FPR/FAS, palettes, quantification, codecs BMP/PNG/GIF.</Description>
-        <AssemblyVersion>2026.10.10.4</AssemblyVersion>
-        <FileVersion>2026.10.10.4</FileVersion>
+        <AssemblyVersion>2026.10.11.5</AssemblyVersion>
+        <FileVersion>2026.10.11.5</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

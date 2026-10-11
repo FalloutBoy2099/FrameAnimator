@@ -191,7 +191,7 @@
                 </Button>
                 <Separator Margin="3,2" />
                 <Button Style="{StaticResource ToolButton}" Command="{Binding LoadPaletteCommand}" ToolTip="{loc:T 'Load Palette'}" AutomationProperties.Name="{loc:T 'Load Palette'}">
-                    <TextBlock Style="{StaticResource Glyph}" Text="&#xE790;" />
+                    <TextBlock Style="{StaticResource Glyph}" Text="&#xE80A;" />
                 </Button>
                 <Button Style="{StaticResource ToolButton}" Command="{Binding OptionsCommand}" ToolTip="{loc:T 'Options'}" AutomationProperties.Name="{loc:T 'Options'}">
                     <TextBlock Style="{StaticResource Glyph}" Text="&#xE713;" />
