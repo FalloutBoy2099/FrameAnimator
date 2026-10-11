@@ -6,6 +6,7 @@ namespace FrameAnimator.App.Views
     using Microsoft.Win32;
 	using Infrastructure;
 	using Localization;
+	using ViewModels;
 
 	/// <summary>
 	/// Single entry point for file dialogs: the application's own dialog (<see cref="FileDialogWindow"/>) or, depending on
@@ -18,7 +19,7 @@ namespace FrameAnimator.App.Views
         public static String[] ShowOpen(Window? owner, String title, String filter, Boolean multiselect)
         {
             if (!DialogPreferences.UseSystemDialogs)
-                return FileDialogWindow.ShowOpen(owner, title, filter, multiselect);
+                return ShowOwn(owner, FileDialogOptions.ForOpen(title, filter, multiselect));
 
             OpenFileDialog dialog = new()
 			{
@@ -38,7 +39,10 @@ namespace FrameAnimator.App.Views
             String defaultExt, Boolean overwritePrompt = true)
         {
             if (!DialogPreferences.UseSystemDialogs)
-                return FileDialogWindow.ShowSave(owner, title, filter, filterIndex, fileName, defaultExt, overwritePrompt);
+            {
+                String[] chosen = ShowOwn(owner, FileDialogOptions.ForSave(title, filter, filterIndex, fileName, defaultExt, overwritePrompt));
+                return chosen.Length > 0 ? chosen[0] : null;
+            }
 
             String initialDirectory = FileDialogMemory.GetLastDirectory(save: true) ?? "";
             String name = fileName ?? "";
@@ -64,6 +68,16 @@ namespace FrameAnimator.App.Views
                 return null;
             Remember(save: true, dialog.FileName);
             return dialog.FileName;
+        }
+
+        /// <summary>The view model of the application's own dialog, wired to the real message boxes and the new folder prompt.</summary>
+        internal static FileDialogViewModel CreateViewModel(FileDialogOptions options)
+            => new(options, new MessageService(), (title, prompt, initial) => TextPromptDialog.Show(DialogHost.ActiveWindow, title, prompt, initial));
+
+        private static String[] ShowOwn(Window? owner, FileDialogOptions options)
+        {
+            FileDialogViewModel viewModel = CreateViewModel(options);
+            return DialogHost.ShowModal(new FileDialogWindow(), viewModel, owner) ? viewModel.Result : [];
         }
 
         private static void Remember(Boolean save, String file)

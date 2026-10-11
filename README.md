@@ -43,14 +43,15 @@ FrameAnimator.sln
 ├─ FrameAnimator.App/             WPF Fluent user interface (net10.0-windows) — the executable project
 │  ├─ Program.cs                  entry point: console mode or window
 │  ├─ App.xaml / Themes/          application, compact styles, compact menu
-│  ├─ ViewModels/                 MainViewModel (actions, state, mouse)
+│  ├─ ViewModels/                 MVVM view models (CommunityToolkit.Mvvm): MainViewModel and one view model per dialog
 │  ├─ Controls/                   FrameCanvas (drawing area: background, hexes, ghost, frame, zoom)
-│  ├─ Views/                      main window, dialogs, file picker, theme, window memory
+│  ├─ Views/                      main window, dialogs (thin XAML views), dialog service / host, theme, window memory
 │  ├─ Localization/               Localizer + JSON dictionaries (11 languages)
-│  ├─ Infrastructure/             MVVM, preferences, console host, file dialog memory
+│  ├─ Infrastructure/             messenger messages, dialog contracts, preferences, console host, file dialog memory
 │  └─ Assets/                     application icon, hexagon tile
-├─ FrameAnimator.Core.Tests/      xUnit tests
+├─ FrameAnimator.Core.Tests/      xUnit tests of the Core and of the console mode
 │  └─ Golden/                     reference files produced by the original executable
+├─ FrameAnimator.App.Tests/       xUnit tests of the view models (net10.0-windows, no window is created)
 ├─ Publish.ps1                    publishes the two executables to publish/
 └─ publish/                       FrameAnimator.exe, FrameAnimator-NET.exe (generated)
 ```
@@ -60,6 +61,7 @@ FrameAnimator.sln
 | `FrameAnimator.Core` | model, FRM / FPR / FAS / ACT / PAL formats, BMP / PNG / GIF codecs, color quantization, FAS scripts, batch processing, console mode — **no dependencies** | complete |
 | `FrameAnimator.App` | **WPF Fluent** interface (native .NET 10 theme, light / dark): frame list, hexagonal drawing area with zoom, Move / Pick tools, Offset / Options / Automate / About / color dialogs, file picker | complete |
 | `FrameAnimator.Core.Tests` | 136 xUnit tests, including 12 **golden** tests that compare the output byte for byte with the original executable's, and the console mode tests | passing |
+| `FrameAnimator.App.Tests` | 112 xUnit tests of the view models (main window and every dialog), with a fake dialog service | passing |
 
 ## Build, test, publish
 
@@ -127,6 +129,23 @@ FrameAnimator automate a.frm b.frm /dest:C:\out\*.fpr /script:prepare.fas /palet
   box; a processing run never blocks.
 * A quoted value must not end with a `\` (`/out:"C:\folder\"` is misread by Windows); the program repairs that case when the argument
   is the last one on the line.
+
+## Architecture of the interface (MVVM)
+
+The interface follows MVVM with [CommunityToolkit.Mvvm](https://learn.microsoft.com/dotnet/communitytoolkit/mvvm/):
+
+* **View models** (`ViewModels/`) derive from `ObservableObject`; properties are generated with `[ObservableProperty]` (partial
+  properties) and commands with `[RelayCommand]` (with `CanExecute`). Commands do not poll WPF, so a view model re-evaluates them
+  explicitly when its state changes (`NotifyCanExecuteChanged`). `MainViewModel` holds the project, the selection, the tools and all
+  menu / toolbar commands; each modal dialog has its own view model deriving from `DialogViewModelBase`, which asks for the dialog to
+  close with `RequestClose(accepted)` and exposes its result.
+* **Views** (`Views/`, XAML) are thin: bindings and commands, no logic. The remaining code-behind is pure view code (title bar
+  buttons, forwarding the list selection, focusing a text box). `FrameCanvas` is a custom control that draws the project.
+* **Services**: `IDialogService` (files, dialogs) and `IMessageService` (messages, questions) are the only way a view model reaches
+  the UI; `DialogService` / `MessageService` implement them with `DialogHost.ShowModal`, which binds a window to its view model and
+  closes it when the view model asks. The tests replace them with `FakeDialogService`.
+* **Messenger**: the language and theme changes are broadcast with `WeakReferenceMessenger` (`LanguageChangedMessage`,
+  `ThemeChangedMessage`); the view models that show computed texts or theme colors react to them.
 
 ## Notes
 

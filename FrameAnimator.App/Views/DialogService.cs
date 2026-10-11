@@ -4,15 +4,17 @@ namespace FrameAnimator.App.Views
     using System.Windows;
     using FrameAnimator.Core.Model;
     using FrameAnimator.Core.Scripting;
-	using Infrastructure;
-	using Localization;
+    using FrameAnimator.App.ViewModels;
+    using Infrastructure;
+    using Localization;
 
-	/// <summary>WPF implementation of<see cref="IDialogService"/>.</summary>
-	public sealed class DialogService : IDialogService
+    /// <summary>WPF implementation of <see cref="IDialogService"/>.</summary>
+    public sealed class DialogService : IDialogService
     {
-        private const String Caption = "Frame Animator";
-
         public Window? Owner { get; set; }
+
+        /// <summary>Messages appear over the window the user works in (a dialog if one is open), else over <see cref="Owner"/>.</summary>
+        private MessageService Messages => new() { Owner = Owner };
 
         /// <summary>Translates the name of each filter of a file dialog (<c>Name (*.ext)|*.ext|…</c>), not its patterns.</summary>
         internal static String TranslateFilter(String filter)
@@ -27,41 +29,36 @@ namespace FrameAnimator.App.Views
         }
 
         public String[] OpenFiles(String title, String filter, Boolean multiSelect)
-            => FileDialogs.ShowOpen(Owner, title, TranslateFilter(filter), multiSelect);
+            => FileDialogs.ShowOpen(DialogHost.ActiveWindow ?? Owner, title, TranslateFilter(filter), multiSelect);
 
-        public String? SaveFile(String title, String filter, Int32 filterIndex, String? fileName, String defaultExt)
-            => FileDialogs.ShowSave(Owner, title, TranslateFilter(filter), filterIndex, fileName, defaultExt);
+        public String? SaveFile(String title, String filter, Int32 filterIndex, String? fileName, String defaultExt, Boolean overwritePrompt = true)
+            => FileDialogs.ShowSave(DialogHost.ActiveWindow ?? Owner, title, TranslateFilter(filter), filterIndex, fileName, defaultExt, overwritePrompt);
 
         public OffsetDialogResult? ShowOffset(OffsetDialogRequest request)
         {
-            OffsetDialog dialog = new(request) { Owner = Owner };
-            return dialog.ShowDialog() == true ? dialog.Result : null;
+            OffsetDialogViewModel viewModel = new(request, Messages);
+            return DialogHost.ShowModal(new OffsetDialog(), viewModel, Owner) ? viewModel.Result : null;
         }
 
         public Boolean ShowOptions(ProjectSettings settings, Int32 frameCount)
-        {
-            OptionsDialog dialog = new(settings, frameCount) { Owner = Owner };
-            return dialog.ShowDialog() == true;
-        }
+            => DialogHost.ShowModal(new OptionsDialog(), new OptionsDialogViewModel(settings, frameCount, Messages), Owner);
 
         public AutomationOptions? ShowAutomate(String currentPalette)
         {
-            AutomateDialog dialog = new(currentPalette) { Owner = Owner };
-            return dialog.ShowDialog() == true ? dialog.Options : null;
+            AutomateDialogViewModel viewModel = new(currentPalette, this);
+            return DialogHost.ShowModal(new AutomateDialog(), viewModel, Owner) ? viewModel.Options : null;
         }
 
-        public void ShowAbout() => new AboutDialog { Owner = Owner }.ShowDialog();
+        public void ShowAbout() => DialogHost.ShowModal(new AboutDialog(), new AboutDialogViewModel(), Owner);
 
         public Int32? PickColor(Int32 initial)
         {
-            ColorDialogWindow dialog = new(initial) { Owner = Owner };
-            return dialog.ShowDialog() == true ? dialog.Result : null;
+            ColorDialogViewModel viewModel = new(initial);
+            return DialogHost.ShowModal(new ColorDialogWindow(), viewModel, Owner) ? viewModel.Result : null;
         }
 
-        public void ShowWarning(String message)
-            => MessageDialog.Show(Owner, Localizer.T(message), Caption, MessageBoxButton.OK, MessageBoxImage.Warning);
+        public void ShowWarning(String message) => Messages.ShowWarning(message);
 
-        public Boolean AskYesNo(String message)
-            => MessageDialog.Show(Owner, Localizer.T(message), Caption, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+        public Boolean AskYesNo(String message) => Messages.AskYesNo(message);
     }
 }

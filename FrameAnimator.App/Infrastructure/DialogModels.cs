@@ -26,14 +26,23 @@ namespace FrameAnimator.App.Infrastructure
 
     public readonly record struct OffsetDialogResult(Int32 X, Int32 Y, Boolean Inherit);
 
+    /// <summary>Messages and questions shown to the user (used by every view model that needs to warn or ask).</summary>
+    public interface IMessageService
+    {
+        void ShowWarning(String message);
+
+        /// <summary>Yes / No question; <c>true</c> for Yes.</summary>
+        Boolean AskYesNo(String message);
+    }
+
     /// <summary>Dialog services (files, modal boxes) used by the view model.</summary>
-    public interface IDialogService
+    public interface IDialogService : IMessageService
     {
         /// <summary>Open dialog; empty array if cancelled.</summary>
         String[] OpenFiles(String title, String filter, Boolean multiSelect);
 
         /// <summary>Save dialog; <c>null</c> if cancelled.</summary>
-        String? SaveFile(String title, String filter, Int32 filterIndex, String? fileName, String defaultExt);
+        String? SaveFile(String title, String filter, Int32 filterIndex, String? fileName, String defaultExt, Boolean overwritePrompt = true);
 
         OffsetDialogResult? ShowOffset(OffsetDialogRequest request);
 
@@ -46,9 +55,5 @@ namespace FrameAnimator.App.Infrastructure
 
         /// <summary>Color picker (0xRRGGBB); <c>null</c> if cancelled.</summary>
         Int32? PickColor(Int32 initial);
-
-        void ShowWarning(String message);
-
-        Boolean AskYesNo(String message);
     }
 }

@@ -2,7 +2,7 @@ namespace FrameAnimator.Core.Cli
 {
     using System;
     using System.IO;
-    using FrameAnimator.Core.Services;
+    using Services;
 
     /// <summary>
     /// Interaction for the console version: no question is asked to the user. Errors go to the error output and

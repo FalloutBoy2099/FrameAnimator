@@ -1,15 +1,17 @@
-<Application x:Class="FrameAnimator.App.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-             ThemeMode="System">
+<Application
+    x:Class="FrameAnimator.App.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+    ThemeMode="System">
+
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/CompactMenu.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Vector icons: Segoe Fluent Icons (Windows 11) or Segoe MDL2 Assets (Windows 10). -->
+            <!--  Vector icons: Segoe Fluent Icons (Windows 11) or Segoe MDL2 Assets (Windows 10).  -->
             <Style x:Key="Glyph" TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
                 <Setter Property="FontSize" Value="18" />
@@ -29,7 +31,11 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <Border
+                                x:Name="Bd"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <ControlTemplate.Triggers>
@@ -55,7 +61,11 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ToggleButton">
-                            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <Border
+                                x:Name="Bd"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <ControlTemplate.Triggers>
@@ -74,7 +84,7 @@
                 </Setter>
             </Style>
 
-            <!-- Buttons of the title bar drawn by the application -->
+            <!--  Buttons of the title bar drawn by the application  -->
             <Style x:Key="CaptionButtonStyle" TargetType="Button">
                 <Setter Property="Width" Value="46" />
                 <Setter Property="Focusable" Value="False" />
@@ -100,7 +110,10 @@
                     </Setter.Value>
                 </Setter>
             </Style>
-            <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+            <Style
+                x:Key="CloseButtonStyle"
+                BasedOn="{StaticResource CaptionButtonStyle}"
+                TargetType="Button">
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
@@ -123,4 +136,5 @@
             </Style>
         </ResourceDictionary>
     </Application.Resources>
+
 </Application>

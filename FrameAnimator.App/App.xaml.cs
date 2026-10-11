@@ -3,10 +3,10 @@ namespace FrameAnimator.App
     using System;
     using System.Windows;
     using System.Windows.Threading;
-    using FrameAnimator.App.Infrastructure;
-    using FrameAnimator.App.Localization;
-    using FrameAnimator.App.ViewModels;
-    using FrameAnimator.App.Views;
+    using Infrastructure;
+    using Localization;
+    using ViewModels;
+    using Views;
 
     public partial class App : Application
     {
@@ -81,24 +81,40 @@ namespace FrameAnimator.App
             }
         }
 
-        private static Window? CreateDialog(String name, MainViewModel vm) => name switch
+        private static Window? CreateDialog(String name, MainViewModel vm)
         {
-            "options" => new OptionsDialog(vm.Project.Settings, 3),
-            "automate" => new AutomateDialog("Default.act"),
-            "about" => new AboutDialog(),
-            "open" => FileDialogWindow.CreateForPreview(),
-            "color" => new ColorDialogWindow(0x80C040),
-            "offset" => new OffsetDialog(new OffsetDialogRequest
+            switch (name)
             {
-                Title = "Frame Offset",
-                X = 3,
-                Y = -2,
-                ShowInherit = true,
-                ShowWizard = true,
-                WizardEnabled = true,
-                Wizard = x => x,
-            }),
-            _ => null,
-        };
+                case "options":
+                    return Bind(new OptionsDialog(), new OptionsDialogViewModel(vm.Project.Settings, 3, new MessageService()));
+                case "automate":
+                    return Bind(new AutomateDialog(), new AutomateDialogViewModel("Default.act", new DialogService()));
+                case "about":
+                    return Bind(new AboutDialog(), new AboutDialogViewModel());
+                case "open":
+                    return FileDialogWindow.CreateForPreview();
+                case "color":
+                    return Bind(new ColorDialogWindow(), new ColorDialogViewModel(0x80C040));
+                case "offset":
+                    return Bind(new OffsetDialog(), new OffsetDialogViewModel(new OffsetDialogRequest
+                    {
+                        Title = "Frame Offset",
+                        X = 3,
+                        Y = -2,
+                        ShowInherit = true,
+                        ShowWizard = true,
+                        WizardEnabled = true,
+                        Wizard = x => x,
+                    }, new MessageService()));
+                default:
+                    return null;
+            }
+        }
+
+        private static Window Bind(Window window, DialogViewModelBase viewModel)
+        {
+            window.DataContext = viewModel;
+            return window;
+        }
     }
 }

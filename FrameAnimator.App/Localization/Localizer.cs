@@ -7,26 +7,18 @@ namespace FrameAnimator.App.Localization
     using System.Linq;
     using System.Reflection;
     using System.Text.Json;
-    using FrameAnimator.App.Infrastructure;
+    using CommunityToolkit.Mvvm.ComponentModel;
+    using CommunityToolkit.Mvvm.Messaging;
+    using Infrastructure;
 
     /// <summary>A language of the interface.</summary>
     public sealed record LanguageInfo(String Code, String NativeName);
 
     /// <summary>Text that follows the interface language (used by the XAML markup extension).</summary>
-    public sealed class LocalizedText : ObservableObject
+    public sealed partial class LocalizedText(String value) : ObservableObject
     {
-        private String _value;
-
-        public LocalizedText(String value)
-        {
-            _value = value;
-        }
-
-        public String Value
-        {
-            get => _value;
-            set => SetField(ref _value, value);
-        }
+        [ObservableProperty]
+        public partial String Value { get; set; } = value;
     }
 
     /// <summary>
@@ -64,9 +56,6 @@ namespace FrameAnimator.App.Localization
         ];
 
         public String Language { get; private set; } = DefaultLanguage;
-
-        /// <summary>Raised when the language changes.</summary>
-        public event EventHandler? LanguageChanged;
 
         /// <summary>Translates a text into the current language.</summary>
         public static String T(String text)
@@ -111,7 +100,7 @@ namespace FrameAnimator.App.Localization
             _translations = Language == DefaultLanguage ? [] : LoadDictionary(Language);
             foreach ((String text, LocalizedText observed) in _observed)
                 observed.Value = T(text);
-            LanguageChanged?.Invoke(this, EventArgs.Empty);
+            WeakReferenceMessenger.Default.Send(new LanguageChangedMessage(Language));
         }
 
         private static String Normalize(String code)

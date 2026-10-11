@@ -8,17 +8,20 @@ namespace FrameAnimator.App.ViewModels
     using System.Windows;
     using System.Windows.Media;
     using System.Windows.Threading;
+    using CommunityToolkit.Mvvm.ComponentModel;
+    using CommunityToolkit.Mvvm.Input;
+    using CommunityToolkit.Mvvm.Messaging;
     using FrameAnimator.Core.Formats;
     using FrameAnimator.Core.Geometry;
     using FrameAnimator.Core.Model;
     using FrameAnimator.Core.Scripting;
     using FrameAnimator.Core.Services;
-	using Infrastructure;
-	using Localization;
-	using Views;
+    using Infrastructure;
+    using Localization;
+    using Views;
 
-	/// <summary>Active tool of the drawing area (byte <c>+0x88e</c> of the original).</summary>
-	public enum EditTool
+    /// <summary>Active tool of the drawing area (byte <c>+0x88e</c> of the original).</summary>
+    public enum EditTool
     {
         None = 0,
         Move = 1,
@@ -28,8 +31,10 @@ namespace FrameAnimator.App.ViewModels
     /// <summary>
     /// View model of the main window: reproduces the actions, state and enabling rules of
     /// <c>TfrmFrameAnimator</c> (specification §6.1 to §6.4), relying on <see cref="ProjectService"/> and <see cref="ProjectEditor"/>.
+    /// Built on CommunityToolkit.Mvvm: observable properties and commands are generated from attributes, and the language and
+    /// theme changes arrive as messages.
     /// </summary>
-    public sealed class MainViewModel : ObservableObject
+    public sealed partial class MainViewModel : ObservableObject, IRecipient<LanguageChangedMessage>, IRecipient<ThemeChangedMessage>
     {
         private const String FrmFilter = "All (*.FPR,*.FRM,*.FR0-*.FR5)|*.FPR;*.FRM;*.FR0;*.FR1;*.FR2;*.FR3;*.FR4;*.FR5|Project (*.FPR)|*.FPR|FRM (*.FRM,*.FR0-*.FR5)|*.FRM;*.FR0;*.FR1;*.FR2;*.FR3;*.FR4;*.FR5";
         private const String ImageFilter = "All (*.BMP, *.GIF, *.PNG)|*.BMP;*.GIF;*.PNG|BMP (*.BMP)|*.BMP|CompuServe GIF (*.GIF)|*.GIF|PNG (*.PNG)|*.PNG";
@@ -42,15 +47,7 @@ namespace FrameAnimator.App.ViewModels
 
         private Int32 _selectedFrameIndex = -1;
         private IReadOnlyList<Int32> _selectedIndices = [];
-        private Boolean _showFullNames;
-        private Boolean _showBackground = true;
-        private Boolean _showHexes;
-        private Boolean _showGhost;
-        private EditTool _tool;
-        private Boolean _isBusy;
         private Int32 _zoom = 2;
-        private Int32 _progressValue;
-        private Int32 _progressMax;
 
         // dragging (Move tool)
         private Boolean _dragging;
@@ -68,38 +65,15 @@ namespace FrameAnimator.App.ViewModels
             Service.Changed += (_, _) => ScheduleRefresh();
             Service.NewProject();
 
-            NewCommand = new RelayCommand(DoNew, NotBusy);
-            OpenCommand = new RelayCommand(DoOpen, NotBusy);
-            ExecuteScriptCommand = new RelayCommand(DoExecuteScript, NotBusy);
-            SaveCommand = new RelayCommand(DoSave, NotBusy);
-            SaveAsCommand = new RelayCommand(DoSaveAs, NotBusy);
-            CreateFrmCommand = new RelayCommand(DoCreateFrm, () => !IsBusy && FrmFormat.IsValidForFrm(Project));
-            AutomateCommand = new RelayCommand(DoAutomate, NotBusy);
-            ExitCommand = new RelayCommand(() => Application.Current.Shutdown(), NotBusy);
-            UndoCommand = new RelayCommand(DoUndo, () => !IsBusy && Editor.CanUndo);
-            FramesOffsetCommand = new RelayCommand(DoFramesOffset, () => !IsBusy && HasFrames);
-            AddFramesCommand = new RelayCommand(DoAddFrames, NotBusy);
-            FrameDownCommand = new RelayCommand(() => DoMoveFrame(1), () => !IsBusy && HasFrames && SelectedFrameIndex >= 0 && SelectedFrameIndex < CurrentFrameCount - 1);
-            FrameUpCommand = new RelayCommand(() => DoMoveFrame(-1), () => !IsBusy && HasFrames && SelectedFrameIndex > 0);
-            FrameOffsetCommand = new RelayCommand(DoFrameOffset, () => !IsBusy && HasFrames && SelectedFrameIndex >= 0 && (SelectedFrameIndex == 0 || !Project.Settings.LockOffsets));
-            RemoveFramesCommand = new RelayCommand(DoRemoveFrames, () => !IsBusy && _selectedIndices.Count > 0);
-            LoadPaletteCommand = new RelayCommand(DoLoadPalette, NotBusy);
-            OptionsCommand = new RelayCommand(DoOptions, NotBusy);
-            LoadBackgroundCommand = new RelayCommand(DoLoadBackground, NotBusy);
-            AboutCommand = new RelayCommand(() => _dialogs.ShowAbout(), NotBusy);
-            CancelCommand = new RelayCommand(DoCancel, () => IsBusy);
-            ToggleMoveCommand = new RelayCommand(() => Tool = Tool == EditTool.Move ? EditTool.None : EditTool.Move, () => !IsBusy && HasFrames);
-            TogglePickCommand = new RelayCommand(() => Tool = Tool == EditTool.Pick ? EditTool.None : EditTool.Pick, () => !IsBusy && HasFrames);
-            PickSampleColorCommand = new RelayCommand(DoPickSampleColor, () => !IsBusy && HasFrames);
-            ToggleBackgroundCommand = new RelayCommand(() => ShowBackground = !ShowBackground);
-            ToggleHexesCommand = new RelayCommand(() => ShowHexes = !ShowHexes);
-            ToggleGhostCommand = new RelayCommand(() => ShowGhost = !ShowGhost);
-            ZoomInCommand = new RelayCommand(() => Zoom++, () => Zoom < 8);
-            ZoomOutCommand = new RelayCommand(() => Zoom--, () => Zoom > 1);
-            ZoomResetCommand = new RelayCommand(() => Zoom = 1);
+            ThemeChoices = Enum.GetValues<ThemePreference>()
+                .Select(preference => new MenuChoice(Localizer.T(preference.ToString()), ChangeThemeCommand, preference))
+                .ToArray();
+            LanguageChoices = Localizer.Languages
+                .Select(language => new MenuChoice(language.NativeName, ChangeLanguageCommand, language.Code))
+                .ToArray();
+            UpdateChoices();
 
-            Localizer.Instance.LanguageChanged += (_, _) => RefreshAll();
-            ThemeManager.Changed += (_, _) => Render();
+            WeakReferenceMessenger.Default.RegisterAll(this);
 
             RefreshAll();
         }
@@ -115,6 +89,12 @@ namespace FrameAnimator.App.ViewModels
 
         /// <summary>Raised to redraw the drawing area.</summary>
         public event EventHandler? RenderRequested;
+
+        /// <summary>Entries of the theme menu (Automatic / Light / Dark).</summary>
+        public IReadOnlyList<MenuChoice> ThemeChoices { get; }
+
+        /// <summary>Entries of the language menu.</summary>
+        public IReadOnlyList<MenuChoice> LanguageChoices { get; }
 
         public IReadOnlyList<LocalizedText> DirectionNames { get; } = Project.DirectionNames.Select(name => Localizer.Instance.Observe(name)).ToArray();
 
@@ -137,6 +117,7 @@ namespace FrameAnimator.App.ViewModels
             }
         }
 
+        /// <summary>The current frame (focused item of the list); ignored while the list is being rebuilt.</summary>
         public Int32 SelectedFrameIndex
         {
             get => _selectedFrameIndex;
@@ -144,7 +125,7 @@ namespace FrameAnimator.App.ViewModels
             {
                 if (_rebuilding)
                     return;
-                if (SetField(ref _selectedFrameIndex, value))
+                if (SetProperty(ref _selectedFrameIndex, value))
                     OnSelectionChanged();
             }
         }
@@ -155,61 +136,48 @@ namespace FrameAnimator.App.ViewModels
             if (_rebuilding)
                 return;
             _selectedIndices = indices;
-            RelayCommand.RaiseCanExecuteChanged();
+            UpdateCommands();
         }
 
-        public Boolean ShowFullNames
-        {
-            get => _showFullNames;
-            set
-            {
-                if (SetField(ref _showFullNames, value))
-                    RebuildFrameList();
-            }
-        }
+        [ObservableProperty]
+        public partial Boolean ShowFullNames { get; set; }
 
-        public Boolean ShowBackground
-        {
-            get => _showBackground;
-            set
-            {
-                if (SetField(ref _showBackground, value))
-                    Render();
-            }
-        }
+        [ObservableProperty]
+        public partial Boolean ShowBackground { get; set; } = true;
 
-        public Boolean ShowHexes
-        {
-            get => _showHexes;
-            set
-            {
-                if (SetField(ref _showHexes, value))
-                    Render();
-            }
-        }
+        [ObservableProperty]
+        public partial Boolean ShowHexes { get; set; }
 
-        public Boolean ShowGhost
-        {
-            get => _showGhost;
-            set
-            {
-                if (SetField(ref _showGhost, value))
-                    Render();
-            }
-        }
+        [ObservableProperty]
+        public partial Boolean ShowGhost { get; set; }
 
-        public EditTool Tool
-        {
-            get => _tool;
-            set
-            {
-                if (!SetField(ref _tool, value))
-                    return;
-                OnPropertyChanged(nameof(IsMoveTool));
-                OnPropertyChanged(nameof(IsPickTool));
-                _dragging = false;
-            }
-        }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsMoveTool))]
+        [NotifyPropertyChangedFor(nameof(IsPickTool))]
+        public partial EditTool Tool { get; set; }
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsIdle))]
+        public partial Boolean IsBusy { get; private set; }
+
+        [ObservableProperty]
+        public partial Int32 ProgressValue { get; private set; }
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ProgressVisible))]
+        public partial Int32 ProgressMaximum { get; private set; }
+
+        partial void OnShowFullNamesChanged(Boolean value) => RebuildFrameList();
+
+        partial void OnShowBackgroundChanged(Boolean value) => Render();
+
+        partial void OnShowHexesChanged(Boolean value) => Render();
+
+        partial void OnShowGhostChanged(Boolean value) => Render();
+
+        partial void OnToolChanged(EditTool value) => _dragging = false;
+
+        partial void OnIsBusyChanged(Boolean value) => UpdateCommands();
 
         /// <summary>Windows "legacy" dialogs (files, messages) instead of the application's own.</summary>
         public Boolean UseSystemDialogs
@@ -253,19 +221,6 @@ namespace FrameAnimator.App.ViewModels
         public Boolean IsMoveTool => Tool == EditTool.Move;
         public Boolean IsPickTool => Tool == EditTool.Pick;
 
-        public Boolean IsBusy
-        {
-            get => _isBusy;
-            private set
-            {
-                if (SetField(ref _isBusy, value))
-                {
-                    OnPropertyChanged(nameof(IsIdle));
-                    RelayCommand.RaiseCanExecuteChanged();
-                }
-            }
-        }
-
         public Boolean IsIdle => !IsBusy;
 
         public Int32 Zoom
@@ -273,9 +228,11 @@ namespace FrameAnimator.App.ViewModels
             get => _zoom;
             set
             {
-                if (SetField(ref _zoom, Math.Clamp(value, 1, 8)))
+                if (SetProperty(ref _zoom, Math.Clamp(value, 1, 8)))
                 {
                     OnPropertyChanged(nameof(ZoomText));
+                    ZoomInCommand.NotifyCanExecuteChanged();
+                    ZoomOutCommand.NotifyCanExecuteChanged();
                     Render();
                 }
             }
@@ -299,19 +256,7 @@ namespace FrameAnimator.App.ViewModels
         public String StatusAutoCutting => Project.Settings.AutoCutting ? Localizer.T("Autocutting") : "";
         public String StatusLock => Project.Settings.LockOffsets ? Localizer.T("Lock Offsets") : "";
 
-        public Int32 ProgressValue
-        {
-            get => _progressValue;
-            private set => SetField(ref _progressValue, value);
-        }
-
-        public Int32 ProgressMaximum
-        {
-            get => _progressMax;
-            private set => SetField(ref _progressMax, value);
-        }
-
-        public Boolean ProgressVisible => _progressMax > 0;
+        public Boolean ProgressVisible => ProgressMaximum > 0;
 
         public Brush SampleBrush => new SolidColorBrush(ImageConversion.ToColor(Project.Settings.SampleColor));
 
@@ -319,39 +264,88 @@ namespace FrameAnimator.App.ViewModels
 
         public String SampleToolTip => Localizer.F("Sample color #{0} (click to change)", (Project.Settings.SampleColor & 0xFFFFFF).ToString("X6"));
 
-        // ------------------------------------------------------------------ commands
+        // ------------------------------------------------------------------ messages
 
-        public RelayCommand NewCommand { get; }
-        public RelayCommand OpenCommand { get; }
-        public RelayCommand ExecuteScriptCommand { get; }
-        public RelayCommand SaveCommand { get; }
-        public RelayCommand SaveAsCommand { get; }
-        public RelayCommand CreateFrmCommand { get; }
-        public RelayCommand AutomateCommand { get; }
-        public RelayCommand ExitCommand { get; }
-        public RelayCommand UndoCommand { get; }
-        public RelayCommand FramesOffsetCommand { get; }
-        public RelayCommand AddFramesCommand { get; }
-        public RelayCommand FrameDownCommand { get; }
-        public RelayCommand FrameUpCommand { get; }
-        public RelayCommand FrameOffsetCommand { get; }
-        public RelayCommand RemoveFramesCommand { get; }
-        public RelayCommand LoadPaletteCommand { get; }
-        public RelayCommand OptionsCommand { get; }
-        public RelayCommand LoadBackgroundCommand { get; }
-        public RelayCommand AboutCommand { get; }
-        public RelayCommand CancelCommand { get; }
-        public RelayCommand ToggleMoveCommand { get; }
-        public RelayCommand TogglePickCommand { get; }
-        public RelayCommand PickSampleColorCommand { get; }
-        public RelayCommand ToggleBackgroundCommand { get; }
-        public RelayCommand ToggleHexesCommand { get; }
-        public RelayCommand ToggleGhostCommand { get; }
-        public RelayCommand ZoomInCommand { get; }
-        public RelayCommand ZoomOutCommand { get; }
-        public RelayCommand ZoomResetCommand { get; }
+        /// <summary>The language changed: every text computed by this view model is refreshed.</summary>
+        public void Receive(LanguageChangedMessage message)
+        {
+            UpdateChoices();
+            RefreshAll();
+        }
 
-        private Boolean NotBusy() => !IsBusy;
+        /// <summary>The theme changed: the drawing area uses theme colors.</summary>
+        public void Receive(ThemeChangedMessage message)
+        {
+            UpdateChoices();
+            Render();
+        }
+
+        /// <summary>Texts and check marks of the theme and language menus follow the current choices.</summary>
+        private void UpdateChoices()
+        {
+            foreach (MenuChoice choice in ThemeChoices)
+            {
+                ThemePreference preference = (ThemePreference)choice.Parameter!;
+                choice.Header = Localizer.T(preference.ToString());
+                choice.IsCurrent = preference == ThemeManager.Preference;
+            }
+            foreach (MenuChoice choice in LanguageChoices)
+                choice.IsCurrent = (String)choice.Parameter! == Localizer.Instance.Language;
+        }
+
+        // ------------------------------------------------------------------ enabling rules
+
+        private Boolean CanCreateFrm() => IsIdle && FrmFormat.IsValidForFrm(Project);
+
+        private Boolean CanUndo() => IsIdle && Editor.CanUndo;
+
+        private Boolean CanUseFrames() => IsIdle && HasFrames;
+
+        private Boolean CanMoveFrameDown() => CanUseFrames() && SelectedFrameIndex >= 0 && SelectedFrameIndex < CurrentFrameCount - 1;
+
+        private Boolean CanMoveFrameUp() => CanUseFrames() && SelectedFrameIndex > 0;
+
+        private Boolean CanEditFrameOffset()
+            => CanUseFrames() && SelectedFrameIndex >= 0 && (SelectedFrameIndex == 0 || !Project.Settings.LockOffsets);
+
+        private Boolean CanRemoveFrames() => IsIdle && _selectedIndices.Count > 0;
+
+        private Boolean CanZoomIn() => Zoom < 8;
+
+        private Boolean CanZoomOut() => Zoom > 1;
+
+        /// <summary>
+        /// Commands do not poll WPF: after any change that can alter an enabling rule, this re-evaluates them all
+        /// (busy state, frames, selection, undo stack, locked offsets, zoom).
+        /// </summary>
+        private void UpdateCommands()
+        {
+            NewCommand.NotifyCanExecuteChanged();
+            OpenCommand.NotifyCanExecuteChanged();
+            ExecuteScriptCommand.NotifyCanExecuteChanged();
+            SaveCommand.NotifyCanExecuteChanged();
+            SaveAsCommand.NotifyCanExecuteChanged();
+            CreateFrmCommand.NotifyCanExecuteChanged();
+            AutomateCommand.NotifyCanExecuteChanged();
+            ExitCommand.NotifyCanExecuteChanged();
+            UndoCommand.NotifyCanExecuteChanged();
+            FramesOffsetCommand.NotifyCanExecuteChanged();
+            AddFramesCommand.NotifyCanExecuteChanged();
+            FrameDownCommand.NotifyCanExecuteChanged();
+            FrameUpCommand.NotifyCanExecuteChanged();
+            FrameOffsetCommand.NotifyCanExecuteChanged();
+            RemoveFramesCommand.NotifyCanExecuteChanged();
+            LoadPaletteCommand.NotifyCanExecuteChanged();
+            OptionsCommand.NotifyCanExecuteChanged();
+            LoadBackgroundCommand.NotifyCanExecuteChanged();
+            AboutCommand.NotifyCanExecuteChanged();
+            CancelCommand.NotifyCanExecuteChanged();
+            ToggleMoveCommand.NotifyCanExecuteChanged();
+            TogglePickCommand.NotifyCanExecuteChanged();
+            PickSampleColorCommand.NotifyCanExecuteChanged();
+            ZoomInCommand.NotifyCanExecuteChanged();
+            ZoomOutCommand.NotifyCanExecuteChanged();
+        }
 
         // ------------------------------------------------------------------ refresh
 
@@ -380,6 +374,7 @@ namespace FrameAnimator.App.ViewModels
             OnPropertyChanged(nameof(SampleBrush));
             OnPropertyChanged(nameof(SampleText));
             OnPropertyChanged(nameof(SampleToolTip));
+            UpdateCommands();
         }
 
         private String FrameText(Frame f)
@@ -416,7 +411,7 @@ namespace FrameAnimator.App.ViewModels
         private void OnSelectionChanged()
         {
             OnPropertyChanged(nameof(StatusFrame));
-            RelayCommand.RaiseCanExecuteChanged();
+            UpdateCommands();
             Render();
         }
 
@@ -426,18 +421,19 @@ namespace FrameAnimator.App.ViewModels
         {
             ProgressValue = done;
             ProgressMaximum = total;
-            OnPropertyChanged(nameof(ProgressVisible));
         }
 
         // ------------------------------------------------------------------ file actions
 
-        private void DoNew()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void New()
         {
             Service.NewProject();
             RefreshAll();
         }
 
-        private void DoOpen()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void Open()
         {
             var files = _dialogs.OpenFiles("Open Project", FrmFilter, false);
             if (files.Length > 0)
@@ -451,7 +447,8 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoExecuteScript()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void ExecuteScript()
         {
             var files = _dialogs.OpenFiles("Open Script", "Action Script (*.FAS)|*.FAS", false);
             if (files.Length == 0)
@@ -469,18 +466,20 @@ namespace FrameAnimator.App.ViewModels
             }
         }
 
-        private void DoSave()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void Save()
         {
             if (!String.Equals(PathHelpers.ExtractFileExt(Project.ProjectFile), ".FPR", StringComparison.OrdinalIgnoreCase))
             {
-                DoSaveAs();
+                SaveAs();
                 return;
             }
             Service.SaveProject(Project.ProjectFile);
             RefreshAll();
         }
 
-        private void DoSaveAs()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void SaveAs()
         {
             var suggested = String.IsNullOrEmpty(Project.ProjectFile) ? "Untitled.fpr" : PathHelpers.ChangeFileExt(Project.ProjectFile, ".FPR");
             var path = _dialogs.SaveFile("Save Project As", "Project (*.FPR)|*.FPR", 1, suggested, "FPR");
@@ -490,7 +489,8 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoCreateFrm()
+        [RelayCommand(CanExecute = nameof(CanCreateFrm))]
+        private void CreateFrm()
         {
             var path = _dialogs.SaveFile("Create FRM", "FRM (*.FRM)|*.FRM|FR (*.FR0 - *.FR5)|*.FR0", 1, Project.FrmFile, "FRM");
             if (path is null)
@@ -499,7 +499,8 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private async void DoAutomate()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private async Task AutomateAsync()
         {
             var options = _dialogs.ShowAutomate(Project.PaletteFile);
             if (options is null)
@@ -523,15 +524,23 @@ namespace FrameAnimator.App.ViewModels
             }
         }
 
-        private void DoCancel()
+        [RelayCommand(CanExecute = nameof(IsBusy))]
+        private void Cancel()
         {
             if (IsBusy && _dialogs.AskYesNo("Stop automated routine?"))
                 Interaction.CancelRequested = true;
         }
 
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void Exit() => Application.Current.Shutdown();
+
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void About() => _dialogs.ShowAbout();
+
         // ------------------------------------------------------------------ edit actions
 
-        private void DoUndo()
+        [RelayCommand(CanExecute = nameof(CanUndo))]
+        private void Undo()
         {
             var dir = Editor.Undo();
             if (dir >= 0)
@@ -539,7 +548,8 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoFramesOffset()
+        [RelayCommand(CanExecute = nameof(CanUseFrames))]
+        private void FramesOffset()
         {
             var dir = Project.CurrentDirection;
             var (x, y) = Editor.GetFramesOffset(dir);
@@ -549,7 +559,8 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoFrameOffset()
+        [RelayCommand(CanExecute = nameof(CanEditFrameOffset))]
+        private void FrameOffset()
         {
             var dir = Project.CurrentDirection;
             var index = SelectedFrameIndex;
@@ -584,7 +595,8 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoAddFrames()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void AddFrames()
         {
             var files = _dialogs.OpenFiles("Add Frames", ImageFilter, true);
             if (files.Length == 0)
@@ -601,7 +613,13 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoMoveFrame(Int32 delta)
+        [RelayCommand(CanExecute = nameof(CanMoveFrameDown))]
+        private void FrameDown() => MoveFrame(1);
+
+        [RelayCommand(CanExecute = nameof(CanMoveFrameUp))]
+        private void FrameUp() => MoveFrame(-1);
+
+        private void MoveFrame(Int32 delta)
         {
             var index = SelectedFrameIndex;
             Editor.MoveFrame(Project.CurrentDirection, index, delta);
@@ -609,13 +627,15 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoRemoveFrames()
+        [RelayCommand(CanExecute = nameof(CanRemoveFrames))]
+        private void RemoveFrames()
         {
             Editor.RemoveFrames(Project.CurrentDirection, _selectedIndices);
             RefreshAll();
         }
 
-        private void DoLoadPalette()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void LoadPalette()
         {
             var files = _dialogs.OpenFiles("Load Palette", PaletteFilter, false);
             if (files.Length > 0)
@@ -623,13 +643,15 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoOptions()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void Options()
         {
             if (_dialogs.ShowOptions(Project.Settings, Project.Directions[0].Count))
                 RefreshAll();
         }
 
-        private void DoLoadBackground()
+        [RelayCommand(CanExecute = nameof(IsIdle))]
+        private void LoadBackground()
         {
             var files = _dialogs.OpenFiles("Load Background", "Background (*.BMP)|*.BMP", false);
             if (files.Length > 0)
@@ -637,7 +659,16 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        private void DoPickSampleColor()
+        // ------------------------------------------------------------------ tools and view
+
+        [RelayCommand(CanExecute = nameof(CanUseFrames))]
+        private void ToggleMove() => Tool = Tool == EditTool.Move ? EditTool.None : EditTool.Move;
+
+        [RelayCommand(CanExecute = nameof(CanUseFrames))]
+        private void TogglePick() => Tool = Tool == EditTool.Pick ? EditTool.None : EditTool.Pick;
+
+        [RelayCommand(CanExecute = nameof(CanUseFrames))]
+        private void PickSampleColor()
         {
             var color = _dialogs.PickColor(Project.Settings.SampleColor);
             if (color is { } c)
@@ -652,6 +683,30 @@ namespace FrameAnimator.App.ViewModels
             OnPropertyChanged(nameof(SampleToolTip));
             Render();
         }
+
+        [RelayCommand]
+        private void ChangeTheme(ThemePreference preference) => ThemeManager.SetPreference(preference);
+
+        [RelayCommand]
+        private void ChangeLanguage(String code) => Localizer.Instance.SetLanguage(code);
+
+        [RelayCommand]
+        private void ToggleBackground() => ShowBackground = !ShowBackground;
+
+        [RelayCommand]
+        private void ToggleHexes() => ShowHexes = !ShowHexes;
+
+        [RelayCommand]
+        private void ToggleGhost() => ShowGhost = !ShowGhost;
+
+        [RelayCommand(CanExecute = nameof(CanZoomIn))]
+        private void ZoomIn() => Zoom++;
+
+        [RelayCommand(CanExecute = nameof(CanZoomOut))]
+        private void ZoomOut() => Zoom--;
+
+        [RelayCommand]
+        private void ZoomReset() => Zoom = 1;
 
         // ------------------------------------------------------------------ mouse (coordinates relative to the center)
 
@@ -692,7 +747,7 @@ namespace FrameAnimator.App.ViewModels
             _lastX = x;
             _lastY = ny;
             Render();
-            RelayCommand.RaiseCanExecuteChanged();
+            UndoCommand.NotifyCanExecuteChanged();
         }
 
         public void CanvasMouseUp() => _dragging = false;

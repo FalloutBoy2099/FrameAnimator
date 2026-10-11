@@ -5,10 +5,8 @@ namespace FrameAnimator.App.Views
     using System.ComponentModel;
 	using System.Windows;
     using System.Windows.Controls;
-    using System.Windows.Controls.Primitives;
     using System.Windows.Input;
     using Infrastructure;
-    using Localization;
     using ViewModels;
 
     public partial class MainWindow : Window
@@ -112,44 +110,14 @@ namespace FrameAnimator.App.Views
 
         private void OnCloseClick(Object sender, RoutedEventArgs e) => SystemCommands.CloseWindow(this);
 
-        private void OnThemeButtonClick(Object sender, RoutedEventArgs e)
+        /// <summary>Opens the context menu of a title-bar button under it (its entries come from the view model).</summary>
+        private void OnMenuButtonClick(Object sender, RoutedEventArgs e)
         {
-            ContextMenu menu = CreateMenu(ThemeButton);
-            foreach (ThemePreference preference in Enum.GetValues<ThemePreference>())
+            if (sender is Button { ContextMenu: { } menu } button)
             {
-                MenuItem item = CreateMenuItem(Localizer.T(preference.ToString()), preference == ThemeManager.Preference);
-                item.Click += (_, _) => ThemeManager.SetPreference(preference);
-                menu.Items.Add(item);
+                menu.PlacementTarget = button;
+                menu.IsOpen = true;
             }
-            menu.IsOpen = true;
-        }
-
-        private void OnLanguageButtonClick(Object sender, RoutedEventArgs e)
-        {
-            ContextMenu menu = CreateMenu(LanguageButton);
-            foreach (LanguageInfo language in Localizer.Languages)
-            {
-                MenuItem item = CreateMenuItem(language.NativeName, language.Code == Localizer.Instance.Language);
-                item.Click += (_, _) => Localizer.Instance.SetLanguage(language.Code);
-                menu.Items.Add(item);
-            }
-            menu.IsOpen = true;
-        }
-
-        private ContextMenu CreateMenu(Button target)
-        {
-            // the menu inherits the font of its target (the button's symbol font): give it the window's font instead
-            return new ContextMenu { PlacementTarget = target, Placement = PlacementMode.Bottom, FontFamily = FontFamily, FontSize = FontSize };
-        }
-
-        private MenuItem CreateMenuItem(String header, Boolean isCurrent)
-        {
-            // a check mark (glyph from the symbol font) indicates the current choice
-            return new MenuItem
-            {
-                Header = header,
-                Icon = isCurrent ? new TextBlock { Text = "", FontFamily = (System.Windows.Media.FontFamily)FindResource("SymbolThemeFontFamily") } : null,
-            };
         }
 
         /// <summary>Development switch <c>--snapshot</c>: saves the window to a PNG, then exits.</summary>

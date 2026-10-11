@@ -16,8 +16,8 @@
         <NoWarn>$(NoWarn);WPF0001</NoWarn>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <Authors>Kain</Authors>
-        <AssemblyVersion>2026.10.11.3</AssemblyVersion>
-        <FileVersion>2026.10.11.3</FileVersion>
+        <AssemblyVersion>2026.10.11.6</AssemblyVersion>
+        <FileVersion>2026.10.11.6</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -27,6 +27,14 @@
     <ItemGroup>
         <Resource Include="Assets\**\*.png" />
         <Resource Include="Assets\app.ico" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="FrameAnimator.App.Tests" />
     </ItemGroup>
 
     <ItemGroup>

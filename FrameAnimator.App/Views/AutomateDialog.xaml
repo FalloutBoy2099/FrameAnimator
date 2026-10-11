@@ -1,50 +1,108 @@
-<Window FontSize="12" x:Class="FrameAnimator.App.Views.AutomateDialog"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:loc="clr-namespace:FrameAnimator.App.Localization"
-        Title="{loc:T 'Automate'}" MinWidth="560" SizeToContent="WidthAndHeight" ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+<Window
+    x:Class="FrameAnimator.App.Views.AutomateDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:FrameAnimator.App.Localization"
+    Title="{loc:T 'Automate'}"
+    MinWidth="560"
+    FontSize="12"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    SizeToContent="WidthAndHeight"
+    WindowStartupLocation="CenterOwner">
+
     <Window.Resources>
         <ResourceDictionary Source="/Themes/Compact.xaml" />
     </Window.Resources>
+
     <StackPanel Margin="16" Grid.IsSharedSizeScope="True">
-        <GroupBox Header="{loc:T 'Source'}" Margin="0,0,0,10" Padding="8">
+        <GroupBox
+            Margin="0,0,0,10"
+            Padding="8"
+            Header="{loc:T 'Source'}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ListBox x:Name="SourceList" Height="110" SelectionMode="Extended" />
+                <ListBox
+                    x:Name="SourceList"
+                    Height="110"
+                    ItemsSource="{Binding Sources, Mode=OneTime}"
+                    SelectionMode="Extended" />
                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                    <Button Content="{loc:T 'Add...'}" MinWidth="80" Margin="0,0,0,6" Click="OnAddSources" />
-                    <Button Content="{loc:T 'Remove'}" MinWidth="80" Click="OnRemoveSources" />
+                    <Button
+                        MinWidth="80"
+                        Margin="0,0,0,6"
+                        Command="{Binding AddSourcesCommand, Mode=OneTime}"
+                        Content="{loc:T 'Add...'}" />
+                    <Button
+                        MinWidth="80"
+                        Command="{Binding RemoveSourcesCommand, Mode=OneTime}"
+                        CommandParameter="{Binding SelectedItems, ElementName=SourceList}"
+                        Content="{loc:T 'Remove'}" />
                 </StackPanel>
             </Grid>
         </GroupBox>
 
-        <GroupBox Header="{loc:T 'Action'}" Margin="0,0,0,10" Padding="8">
+        <GroupBox
+            Margin="0,0,0,10"
+            Padding="8"
+            Header="{loc:T 'Action'}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" MinWidth="130" SharedSizeGroup="Labels" />
+                    <ColumnDefinition
+                        Width="Auto"
+                        MinWidth="130"
+                        SharedSizeGroup="Labels" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <CheckBox x:Name="UsePaletteBox" Content="{loc:T 'Use Palette'}" VerticalAlignment="Center" Margin="0,0,12,6" />
-                <TextBox Grid.Column="1" x:Name="PaletteBox" IsEnabled="{Binding IsChecked, ElementName=UsePaletteBox}" Margin="0,0,6,6" />
-                <Button Grid.Column="2" Content="..." Width="36" Margin="0,0,0,6" Click="OnBrowsePalette"
-                        IsEnabled="{Binding IsChecked, ElementName=UsePaletteBox}" />
-                <CheckBox Grid.Row="1" x:Name="UseScriptBox" Content="{loc:T 'Use Script'}" VerticalAlignment="Center"  Margin="0,0,12,0" />
-                <TextBox Grid.Row="1" Grid.Column="1" x:Name="ScriptBox" IsEnabled="{Binding IsChecked, ElementName=UseScriptBox}" Margin="0,0,6,0" />
-                <Button Grid.Row="1" Grid.Column="2" Content="..." Width="36" Click="OnBrowseScript"
-                        IsEnabled="{Binding IsChecked, ElementName=UseScriptBox}" />
+                <CheckBox
+                    Margin="0,0,12,6"
+                    VerticalAlignment="Center"
+                    Content="{loc:T 'Use Palette'}"
+                    IsChecked="{Binding UsePalette}" />
+                <TextBox
+                    Grid.Column="1"
+                    Margin="0,0,6,6"
+                    IsEnabled="{Binding UsePalette}"
+                    Text="{Binding PalettePath, UpdateSourceTrigger=PropertyChanged}" />
+                <Button
+                    Grid.Column="2"
+                    Width="36"
+                    Margin="0,0,0,6"
+                    Command="{Binding BrowsePaletteCommand, Mode=OneTime}"
+                    Content="..." />
+                <CheckBox
+                    Grid.Row="1"
+                    Margin="0,0,12,0"
+                    VerticalAlignment="Center"
+                    Content="{loc:T 'Use Script'}"
+                    IsChecked="{Binding UseScript}" />
+                <TextBox
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="0,0,6,0"
+                    IsEnabled="{Binding UseScript}"
+                    Text="{Binding ScriptPath, UpdateSourceTrigger=PropertyChanged}" />
+                <Button
+                    Grid.Row="1"
+                    Grid.Column="2"
+                    Width="36"
+                    Command="{Binding BrowseScriptCommand, Mode=OneTime}"
+                    Content="..." />
             </Grid>
         </GroupBox>
 
-        <GroupBox Header="{loc:T 'Destination'}" Margin="0,0,0,12" Padding="8">
+        <GroupBox
+            Margin="0,0,0,12"
+            Padding="8"
+            Header="{loc:T 'Destination'}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -52,24 +110,66 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" MinWidth="130" SharedSizeGroup="Labels" />
+                    <ColumnDefinition
+                        Width="Auto"
+                        MinWidth="130"
+                        SharedSizeGroup="Labels" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{loc:T 'Destination format'}" VerticalAlignment="Center" Margin="0,0,12,6" />
-                <ComboBox Grid.Column="1" x:Name="FormatBox" HorizontalAlignment="Stretch" Margin="0,0,0,6"
-                          SelectionChanged="OnFormatChanged" />
-                <TextBlock Grid.Row="1" Text="{loc:T 'Destination mask'}" VerticalAlignment="Center" Margin="0,0,12,6" />
-                <TextBox Grid.Row="1" Grid.Column="1" x:Name="MaskBox" Margin="0,0,6,6" />
-                <Button Grid.Row="1" Grid.Column="2" Content="..." Width="36" Margin="0,0,0,6" Click="OnBrowseMask" />
-                <TextBlock Grid.Row="2" Text="{loc:T 'Save frames as'}" VerticalAlignment="Center"  Margin="0,0,12,0" />
-                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="FramesBox" HorizontalAlignment="Stretch" />
+                <TextBlock
+                    Margin="0,0,12,6"
+                    VerticalAlignment="Center"
+                    Text="{loc:T 'Destination format'}" />
+                <ComboBox
+                    Grid.Column="1"
+                    Margin="0,0,0,6"
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding Formats, Mode=OneTime}"
+                    SelectedIndex="{Binding FormatIndex}" />
+                <TextBlock
+                    Grid.Row="1"
+                    Margin="0,0,12,6"
+                    VerticalAlignment="Center"
+                    Text="{loc:T 'Destination mask'}" />
+                <TextBox
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="0,0,6,6"
+                    Text="{Binding DestinationMask, UpdateSourceTrigger=PropertyChanged}" />
+                <Button
+                    Grid.Row="1"
+                    Grid.Column="2"
+                    Width="36"
+                    Margin="0,0,0,6"
+                    Command="{Binding BrowseMaskCommand, Mode=OneTime}"
+                    Content="..." />
+                <TextBlock
+                    Grid.Row="2"
+                    Margin="0,0,12,0"
+                    VerticalAlignment="Center"
+                    Text="{loc:T 'Save frames as'}" />
+                <ComboBox
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding FrameFormats, Mode=OneTime}"
+                    SelectedIndex="{Binding FrameFormatIndex}" />
             </Grid>
         </GroupBox>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="{loc:T 'Start'}" MinWidth="80" IsDefault="True" Margin="0,0,8,0" Click="OnOk" />
-            <Button Content="{loc:T 'Cancel'}" MinWidth="80" IsCancel="True" />
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button
+                MinWidth="80"
+                Margin="0,0,8,0"
+                Command="{Binding OkCommand, Mode=OneTime}"
+                Content="{loc:T 'Start'}"
+                IsDefault="True" />
+            <Button
+                MinWidth="80"
+                Content="{loc:T 'Cancel'}"
+                IsCancel="True" />
         </StackPanel>
     </StackPanel>
+
 </Window>

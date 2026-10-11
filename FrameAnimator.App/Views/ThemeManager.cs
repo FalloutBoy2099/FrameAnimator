@@ -3,6 +3,7 @@ namespace FrameAnimator.App.Views
     using System;
     using System.Windows;
     using Microsoft.Win32;
+	using CommunityToolkit.Mvvm.Messaging;
 	using Infrastructure;
 
 	/// <summary>User's theme choice: follow Windows, always light or always dark.</summary>
@@ -20,9 +21,6 @@ namespace FrameAnimator.App.Views
 
         public static ThemePreference Preference { get; private set; } = ThemePreference.Automatic;
 
-        /// <summary>Raised after the theme changes.</summary>
-        public static event EventHandler? Changed;
-
         public static void Initialize()
         {
             Preference = Parse(UserSettings.Get(ThemeKey));
@@ -36,7 +34,7 @@ namespace FrameAnimator.App.Views
             ApplyToApplication();
             foreach (Window window in Application.Current.Windows)
                 TitleBarTheme.Apply(window);
-            Changed?.Invoke(null, EventArgs.Empty);
+            WeakReferenceMessenger.Default.Send(new ThemeChangedMessage(preference));
         }
 
         /// <summary>Applies a theme without remembering it (development switches).</summary>

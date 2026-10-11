@@ -2,40 +2,17 @@ namespace FrameAnimator.App.Views
 {
     using System;
     using System.Windows;
-    using System.Windows.Controls;
     using Infrastructure;
-    using Localization;
+    using ViewModels;
 
     /// <summary>Message box using the application's theme (system message boxes do not follow the dark theme).</summary>
     public partial class MessageDialog : Window
     {
-        private MessageBoxResult _result = MessageBoxResult.None;
-
-        private MessageDialog(String message, String caption, MessageBoxButton buttons, MessageBoxImage image)
+        private MessageDialog()
         {
             InitializeComponent();
             TitleBarTheme.Attach(this);
             WindowMemory.Attach(this);
-
-            Title = caption;
-            Message.Text = message;
-            Glyph.Text = GetGlyph(image);
-            Glyph.Visibility = Glyph.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
-
-            switch (buttons)
-            {
-                case MessageBoxButton.OK:
-                    AddButton(MessageBoxResult.OK, isDefault: true, isCancel: true);
-                    break;
-                case MessageBoxButton.YesNo:
-                    AddButton(MessageBoxResult.Yes, isDefault: true, isCancel: false);
-                    AddButton(MessageBoxResult.No, isDefault: false, isCancel: true);
-                    break;
-                default:
-                    AddButton(MessageBoxResult.OK, isDefault: true, isCancel: true);
-                    AddButton(MessageBoxResult.Cancel, isDefault: false, isCancel: true);
-                    break;
-            }
         }
 
         /// <summary>Shows the message and returns the chosen button.</summary>
@@ -48,50 +25,9 @@ namespace FrameAnimator.App.Views
                     : MessageBox.Show(message, caption, buttons, image);
             }
 
-            MessageDialog dialog = new(message, caption, buttons, image);
-            if (owner is { IsLoaded: true })
-                dialog.Owner = owner;
-            else
-                dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            dialog.ShowDialog();
-            return dialog._result;
-        }
-
-        private static String GetGlyph(MessageBoxImage image) => image switch
-        {
-            MessageBoxImage.Information => "",
-            MessageBoxImage.Warning => "",
-            MessageBoxImage.Error => "",
-            MessageBoxImage.Question => "",
-            _ => String.Empty,
-        };
-
-        private static String GetCaption(MessageBoxResult result) => Localizer.T(result switch
-        {
-            MessageBoxResult.Yes => "Yes",
-            MessageBoxResult.No => "No",
-            MessageBoxResult.Cancel => "Cancel",
-            _ => "OK",
-        });
-
-        private void AddButton(MessageBoxResult result, Boolean isDefault, Boolean isCancel)
-        {
-            Button button = new()
-			{
-                Content = GetCaption(result),
-                MinWidth = 80,
-                Margin = new Thickness(Buttons.Children.Count == 0 ? 0 : 8, 0, 0, 0),
-                IsDefault = isDefault,
-                IsCancel = isCancel,
-            };
-            if (isDefault)
-                button.Style = (Style)FindResource("AccentButtonStyle");
-            button.Click += (_, _) =>
-            {
-                _result = result;
-                Close();
-            };
-            Buttons.Children.Add(button);
+            MessageDialogViewModel viewModel = new(message, caption, buttons, image);
+            DialogHost.ShowModal(new MessageDialog(), viewModel, owner);
+            return viewModel.Result;
         }
     }
 }

@@ -16,7 +16,7 @@ namespace FrameAnimator.App
             if (CliApp.IsConsoleInvocation(args))
                 return ConsoleHost.Run(args);
 
-            App app = new App();
+            App app = new();
             app.InitializeComponent();
             return app.Run();
         }

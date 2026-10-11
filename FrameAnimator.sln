@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FrameAnimator.Core.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FrameAnimator.App", "FrameAnimator.App\FrameAnimator.App.csproj", "{D6C74922-9913-4B11-A4AD-5E49929F35A7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FrameAnimator.App.Tests", "FrameAnimator.App.Tests\FrameAnimator.App.Tests.csproj", "{DD891633-29E5-4D02-9C19-CB6D421E753E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{D6C74922-9913-4B11-A4AD-5E49929F35A7}.Release|x64.Build.0 = Release|Any CPU
 		{D6C74922-9913-4B11-A4AD-5E49929F35A7}.Release|x86.ActiveCfg = Release|Any CPU
 		{D6C74922-9913-4B11-A4AD-5E49929F35A7}.Release|x86.Build.0 = Release|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Debug|x64.Build.0 = Debug|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Debug|x86.Build.0 = Debug|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Release|x64.ActiveCfg = Release|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Release|x64.Build.0 = Release|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Release|x86.ActiveCfg = Release|Any CPU
+		{DD891633-29E5-4D02-9C19-CB6D421E753E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

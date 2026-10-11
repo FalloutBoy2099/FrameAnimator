@@ -5,11 +5,11 @@ namespace FrameAnimator.Core.Cli
     using System.IO;
     using System.Linq;
     using System.Reflection;
-    using FrameAnimator.Core.Formats;
-    using FrameAnimator.Core.Imaging;
-    using FrameAnimator.Core.Model;
-    using FrameAnimator.Core.Scripting;
-    using FrameAnimator.Core.Services;
+    using Formats;
+    using Imaging;
+    using Model;
+    using Scripting;
+    using Services;
 
     /// <summary>
     /// Console version of Frame Animator: conversion, script execution and automation (<c>File &gt; Automate</c>) from
