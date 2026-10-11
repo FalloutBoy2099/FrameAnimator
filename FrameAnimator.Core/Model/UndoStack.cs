@@ -4,16 +4,16 @@ namespace FrameAnimator.Core.Model
     using System.Collections.Generic;
 
     /// <summary>
-    /// Enregistrement d'annulation (0x14 octets dans l'original) : sauvegarde de l'ANCIENNE valeur d'un décalage.
+    /// Undo record (0x14 bytes in the original): saves the OLD value of an offset.
     /// <list type="bullet">
-    /// <item><c>FrameIndex &lt; 0</c> : <c>ShiftBase</c> de la direction (X,Y).</item>
-    /// <item><c>FrameIndex == 0</c> : <c>FirstFrameOffset</c> de la direction.</item>
-    /// <item><c>FrameIndex &gt; 0</c> : décalage absolu de la frame ; <c>Inherit</c> propage la différence aux frames suivantes.</item>
+    /// <item><c>FrameIndex &lt; 0</c>: <c>ShiftBase</c> of the direction (X,Y).</item>
+    /// <item><c>FrameIndex == 0</c>: <c>FirstFrameOffset</c> of the direction.</item>
+    /// <item><c>FrameIndex &gt; 0</c>: absolute offset of the frame; <c>Inherit</c> propagates the difference to the following frames.</item>
     /// </list>
     /// </summary>
     public readonly record struct UndoRecord(Int16 Direction, Int32 FrameIndex, Int32 X, Int32 Y, Boolean Inherit);
 
-    /// <summary>Pile bornée à 10 enregistrements (la plus ancienne est supprimée au 11e).</summary>
+    /// <summary>Stack limited to 10 records (the oldest is dropped when the 11th is pushed).</summary>
     public sealed class UndoStack
     {
         public const Int32 Capacity = 10;

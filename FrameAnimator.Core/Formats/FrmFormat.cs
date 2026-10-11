@@ -6,7 +6,7 @@ namespace FrameAnimator.Core.Formats
     using Geometry;
     using Model;
 
-    /// <summary>Résultat de l'étape de préparation de l'écriture (taille de chaque direction, décalages d'en‑tête…).</summary>
+    /// <summary>Result of the write preparation step (size of each direction, header offsets…).</summary>
     public sealed class FrmLayout
     {
         public Int32[] Counts { get; } = new Int32[Project.DirectionCount];
@@ -16,22 +16,22 @@ namespace FrameAnimator.Core.Formats
     }
 
     /// <summary>
-    /// Écriture et lecture des fichiers FRM Fallout (grand‑boutiste). Voir la spécification §4.2.
-    /// Les fonctions de ce type ne montrent aucun message ; <see cref="ProjectService"/> gère les dialogues.
+    /// Writing and reading of Fallout FRM files (big-endian). See specification §4.2.
+    /// The functions of this type show no messages; <see cref="ProjectService"/> handles the dialogs.
     /// </summary>
     public static class FrmFormat
     {
         public const Int32 Version = 4;
         public const Int32 HeaderSize = 62;
 
-        /// <summary>Nombre maximal de pixels accepté pour une frame lue (16 Mpx, bien au-delà de toute image de jeu).</summary>
+        /// <summary>Maximum number of pixels accepted for a frame being read (16 Mpx, far beyond any game image).</summary>
         public const Int32 MaxFramePixels = 16 * 1024 * 1024;
         public const Int32 FrameHeaderSize = 12;
 
         // ------------------------------------------------------------------ validation
 
         /// <summary>
-        /// Jeu de frames valide pour un fichier <c>.FRM</c> : <c>n0&gt;0</c> et (<c>n0==n1</c> ou <c>n1==0</c>) et <c>n2..n5 == n1</c>.
+        /// Valid frame set for an <c>.FRM</c> file: <c>n0&gt;0</c> and (<c>n0==n1</c> or <c>n1==0</c>) and <c>n2..n5 == n1</c>.
         /// </summary>
         public static Boolean IsValidForFrm(Project p)
         {
@@ -46,7 +46,7 @@ namespace FrameAnimator.Core.Formats
             return true;
         }
 
-        /// <summary>Jeu de frames valide pour <c>.FR0…FR5</c> : six directions de même longueur non nulle.</summary>
+        /// <summary>Valid frame set for <c>.FR0…FR5</c>: six directions of the same non-zero length.</summary>
         public static Boolean IsValidForFrN(Project p)
         {
             Int32 n0 = p.Directions[0].Count;
@@ -58,9 +58,9 @@ namespace FrameAnimator.Core.Formats
             return true;
         }
 
-        // ------------------------------------------------------------------ écriture
+        // ------------------------------------------------------------------ writing
 
-        /// <summary>Auto‑coupe de toutes les frames, tailles par direction et décalages d'en‑tête (début de 0x407b18).</summary>
+        /// <summary>Auto-cuts all frames, computes per-direction sizes and header offsets (start of 0x407b18).</summary>
         public static FrmLayout Prepare(Project p)
         {
             var layout = new FrmLayout();
@@ -82,7 +82,7 @@ namespace FrameAnimator.Core.Formats
             return layout;
         }
 
-        /// <summary>Écrit un fichier <c>.FRM</c> complet (jeu de frames supposé valide).</summary>
+        /// <summary>Writes a complete <c>.FRM</c> file (frame set assumed valid).</summary>
         public static void WriteFrm(Project p, FrmLayout layout, Stream s)
         {
             WriteHeaderStart(p, layout.Counts[0], s);
@@ -108,8 +108,8 @@ namespace FrameAnimator.Core.Formats
         }
 
         /// <summary>
-        /// Écrit le fichier <c>.FRd</c> d'une direction. Reproduit la particularité de l'original : la zone « FrameAreaSize »
-        /// contient la taille de TOUTES les directions.
+        /// Writes the <c>.FRd</c> file of one direction. Reproduces a quirk of the original: the "FrameAreaSize" field
+        /// contains the size of ALL directions.
         /// </summary>
         public static void WriteFrDirection(Project p, FrmLayout layout, Int32 d, Stream s)
         {
@@ -135,7 +135,7 @@ namespace FrameAnimator.Core.Formats
             WriteS16(s, framesPerDirection);
         }
 
-        /// <summary>En‑tête et pixels d'une frame (0x403b90). L'auto‑coupe doit avoir été appliquée.</summary>
+        /// <summary>Header and pixels of a frame (0x403b90). Auto-cut must have been applied.</summary>
         public static void WriteFrame(Project p, Direction dir, Int32 index, Stream s)
         {
             var f = dir.Frames[index];
@@ -176,15 +176,15 @@ namespace FrameAnimator.Core.Formats
             s.Write(b);
         }
 
-        // ------------------------------------------------------------------ lecture
+        // ------------------------------------------------------------------ reading
 
-        /// <summary>En‑tête FRM décodé (une partie seulement est exploitée par l'original).</summary>
+        /// <summary>Decoded FRM header (the original uses only part of it).</summary>
         public sealed class Header
         {
             public Int32 Version { get; init; }
             public UInt16 Fps { get; init; }
             public UInt16 ActionFrame { get; init; }
-            /// <summary>Lu comme <c>int16</c> signé (<c>movsx</c> dans l'original).</summary>
+            /// <summary>Read as a signed <c>int16</c> (<c>movsx</c> in the original).</summary>
             public Int32 FramesPerDirection { get; init; }
             public Int16[] ShiftX { get; init; } = new Int16[6];
             public Int16[] ShiftY { get; init; } = new Int16[6];
@@ -208,14 +208,14 @@ namespace FrameAnimator.Core.Formats
             };
         }
 
-        /// <summary>Lit une frame (0x403da4) et l'ajoute à <paramref name="dir"/>. <paramref name="relX"/>/<paramref name="relY"/> sont les décalages lus.</summary>
+        /// <summary>Reads a frame (0x403da4) and adds it to <paramref name="dir"/>. <paramref name="relX"/>/<paramref name="relY"/> are the offsets read.</summary>
         public static Frame ReadFrame(Project p, Stream s, Direction dir, out Int32 relX, out Int32 relY)
         {
             Int32 w = ReadS16(s), h = ReadS16(s);
-            ReadS32(s); // taille, ignorée
+            ReadS32(s); // size, ignored
             relX = ReadS16(s);
             relY = ReadS16(s);
-            // une taille incohérente (fichier corrompu) ne doit pas provoquer une allocation de plusieurs Go
+            // an inconsistent size (corrupt file) must not trigger an allocation of several GB
             if (w <= 0 || h <= 0 || (Int64)w * h > MaxFramePixels)
                 throw new InvalidDataException("Invalid frame size in FRM.");
             var bmp = new Bitmap32(w, h);
@@ -231,8 +231,8 @@ namespace FrameAnimator.Core.Formats
         }
 
         /// <summary>
-        /// Lit les octets demandés ; si le fichier est tronqué, l'original (<c>FileRead</c> sans contrôle) laisse le tampon
-        /// inchangé : on répète le dernier octet lu.
+        /// Reads the requested bytes; if the file is truncated, the original (<c>FileRead</c> without checking) leaves the buffer
+        /// unchanged: the last byte read is repeated.
         /// </summary>
         private static void ReadExactOrRepeat(Stream s, Byte[] buf)
         {
@@ -283,7 +283,7 @@ namespace FrameAnimator.Core.Formats
             return a;
         }
 
-        /// <summary>Nom interne d'une frame issue d'un FRM : <c>base + "%02d%04d"</c> (formule de l'original, 0x405c90).</summary>
+        /// <summary>Internal name of a frame coming from an FRM: <c>base + "%02d%04d"</c> (formula from the original, 0x405c90).</summary>
         public static String FrameName(String frmFileName, Int32 direction, Int32 frame)
         {
             String name = Path.GetFileName(frmFileName);

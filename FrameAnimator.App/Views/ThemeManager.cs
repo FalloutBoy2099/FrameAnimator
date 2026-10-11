@@ -5,7 +5,7 @@ namespace FrameAnimator.App.Views
     using Microsoft.Win32;
 	using Infrastructure;
 
-	/// <summary>Choix de thème de l'utilisateur : suivre Windows, toujours clair ou toujours sombre.</summary>
+	/// <summary>User's theme choice: follow Windows, always light or always dark.</summary>
 	public enum ThemePreference
     {
         Automatic,
@@ -13,14 +13,14 @@ namespace FrameAnimator.App.Views
         Dark,
     }
 
-    /// <summary>Applique la préférence de thème à l'application et la mémorise.</summary>
+    /// <summary>Applies the theme preference to the application and remembers it.</summary>
     public static class ThemeManager
     {
         private const String ThemeKey = "theme";
 
         public static ThemePreference Preference { get; private set; } = ThemePreference.Automatic;
 
-        /// <summary>Déclenché après un changement de thème.</summary>
+        /// <summary>Raised after the theme changes.</summary>
         public static event EventHandler? Changed;
 
         public static void Initialize()
@@ -39,14 +39,14 @@ namespace FrameAnimator.App.Views
             Changed?.Invoke(null, EventArgs.Empty);
         }
 
-        /// <summary>Applique un thème sans le mémoriser (commutateurs de développement).</summary>
+        /// <summary>Applies a theme without remembering it (development switches).</summary>
         internal static void Preview(ThemePreference preference)
         {
             Preference = preference;
             ApplyToApplication();
         }
 
-        /// <summary>Indique si l'application est dessinée en thème sombre (préférence, puis réglage de Windows).</summary>
+        /// <summary>Indicates whether the application is drawn with the dark theme (preference first, then the Windows setting).</summary>
         public static Boolean IsDark() => Preference switch
         {
             ThemePreference.Light => false,

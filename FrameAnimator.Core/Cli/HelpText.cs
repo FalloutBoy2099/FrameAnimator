@@ -3,7 +3,7 @@ namespace FrameAnimator.Core.Cli
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Textes d'aide (<c>/?</c>) en anglais et en français ; la langue du système choisit, l'anglais est le repli.</summary>
+    /// <summary>Help texts (<c>/?</c>) in English and French; the system language selects one, English is the fallback.</summary>
     internal static class HelpText
     {
         private const String EnglishGeneral = """
@@ -272,7 +272,7 @@ namespace FrameAnimator.Core.Cli
             ["encode"] = (EnglishEncode, FrenchEncode),
         };
 
-        /// <summary>Aide d'une commande (chaîne vide : aide générale). Retourne l'aide générale pour une commande inconnue.</summary>
+        /// <summary>Help for a command (empty string: general help). Returns the general help for an unknown command.</summary>
         public static String Get(String command, String language, String exe, String version)
         {
             if (!Topics.TryGetValue(command, out (String English, String French) topic))

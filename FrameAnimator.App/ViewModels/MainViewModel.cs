@@ -17,7 +17,7 @@ namespace FrameAnimator.App.ViewModels
 	using Localization;
 	using Views;
 
-	/// <summary>Outil actif de la zone de dessin (octet <c>+0x88e</c> de l'original).</summary>
+	/// <summary>Active tool of the drawing area (byte <c>+0x88e</c> of the original).</summary>
 	public enum EditTool
     {
         None = 0,
@@ -26,8 +26,8 @@ namespace FrameAnimator.App.ViewModels
     }
 
     /// <summary>
-    /// Modèle de vue de la fenêtre principale : reprend les actions, l'état et les règles d'activation de
-    /// <c>TfrmFrameAnimator</c> (spécification §6.1 à §6.4) en s'appuyant sur <see cref="ProjectService"/> et <see cref="ProjectEditor"/>.
+    /// View model of the main window: reproduces the actions, state and enabling rules of
+    /// <c>TfrmFrameAnimator</c> (specification §6.1 to §6.4), relying on <see cref="ProjectService"/> and <see cref="ProjectEditor"/>.
     /// </summary>
     public sealed class MainViewModel : ObservableObject
     {
@@ -52,7 +52,7 @@ namespace FrameAnimator.App.ViewModels
         private Int32 _progressValue;
         private Int32 _progressMax;
 
-        // glisser (outil Move)
+        // dragging (Move tool)
         private Boolean _dragging;
         private Int32 _anchorX, _anchorY, _lastX, _lastY;
 
@@ -104,7 +104,7 @@ namespace FrameAnimator.App.ViewModels
             RefreshAll();
         }
 
-        // ------------------------------------------------------------------ état
+        // ------------------------------------------------------------------ state
 
         public WpfInteraction Interaction { get; }
         public Project Project { get; }
@@ -113,7 +113,7 @@ namespace FrameAnimator.App.ViewModels
 
         public ObservableCollection<String> Frames { get; } = [];
 
-        /// <summary>Déclenché pour redessiner la zone de dessin.</summary>
+        /// <summary>Raised to redraw the drawing area.</summary>
         public event EventHandler? RenderRequested;
 
         public IReadOnlyList<LocalizedText> DirectionNames { get; } = Project.DirectionNames.Select(name => Localizer.Instance.Observe(name)).ToArray();
@@ -149,7 +149,7 @@ namespace FrameAnimator.App.ViewModels
             }
         }
 
-        /// <summary>Indices de tous les éléments sélectionnés (liste à sélection multiple).</summary>
+        /// <summary>Indices of all selected items (multi-select list).</summary>
         public void SetSelectedIndices(IReadOnlyList<Int32> indices)
         {
             if (_rebuilding)
@@ -211,7 +211,7 @@ namespace FrameAnimator.App.ViewModels
             }
         }
 
-        /// <summary>Boîtes de dialogue « legacy » de Windows (fichiers, messages) au lieu de celles de l'application.</summary>
+        /// <summary>Windows "legacy" dialogs (files, messages) instead of the application's own.</summary>
         public Boolean UseSystemDialogs
         {
             get => DialogPreferences.UseSystemDialogs;
@@ -224,7 +224,7 @@ namespace FrameAnimator.App.ViewModels
             }
         }
 
-        /// <summary>Retenir la position de toutes les fenêtres.</summary>
+        /// <summary>Remember the position of all windows.</summary>
         public Boolean SaveWindowPosition
         {
             get => WindowMemory.SavePosition;
@@ -237,7 +237,7 @@ namespace FrameAnimator.App.ViewModels
             }
         }
 
-        /// <summary>Retenir les dimensions de toutes les fenêtres.</summary>
+        /// <summary>Remember the size of all windows.</summary>
         public Boolean SaveWindowSize
         {
             get => WindowMemory.SaveSize;
@@ -285,7 +285,7 @@ namespace FrameAnimator.App.ViewModels
 
         public String Title => $"{Project.Title} — Frame Animator";
 
-        // barre d'état (panneaux de l'original)
+        // status bar (panels of the original)
         public String StatusFrame => HasFrames ? Localizer.F("Frame {0}/{1}", SelectedFrameIndex + 1, CurrentFrameCount) : "";
 
         public String StatusTransparent => Localizer.T(Project.Settings.TransparentMode switch
@@ -319,7 +319,7 @@ namespace FrameAnimator.App.ViewModels
 
         public String SampleToolTip => Localizer.F("Sample color #{0} (click to change)", (Project.Settings.SampleColor & 0xFFFFFF).ToString("X6"));
 
-        // ------------------------------------------------------------------ commandes
+        // ------------------------------------------------------------------ commands
 
         public RelayCommand NewCommand { get; }
         public RelayCommand OpenCommand { get; }
@@ -353,7 +353,7 @@ namespace FrameAnimator.App.ViewModels
 
         private Boolean NotBusy() => !IsBusy;
 
-        // ------------------------------------------------------------------ rafraîchissement
+        // ------------------------------------------------------------------ refresh
 
         private void ScheduleRefresh()
         {
@@ -367,7 +367,7 @@ namespace FrameAnimator.App.ViewModels
             }, DispatcherPriority.Background);
         }
 
-        /// <summary>Équivalent de <c>0x4025bc</c> : liste, barre d'état, activation des actions et dessin.</summary>
+        /// <summary>Equivalent of <c>0x4025bc</c>: list, status bar, action enabling and drawing.</summary>
         public void RefreshAll()
         {
             RebuildFrameList();
@@ -429,7 +429,7 @@ namespace FrameAnimator.App.ViewModels
             OnPropertyChanged(nameof(ProgressVisible));
         }
 
-        // ------------------------------------------------------------------ actions fichier
+        // ------------------------------------------------------------------ file actions
 
         private void DoNew()
         {
@@ -444,7 +444,7 @@ namespace FrameAnimator.App.ViewModels
                 OpenPath(files[0]);
         }
 
-        /// <summary>Ouvre un projet ou un FRM (aussi utilisé pour l'argument de la ligne de commande).</summary>
+        /// <summary>Opens a project or an FRM (also used for the command-line argument).</summary>
         public void OpenPath(String path)
         {
             Service.OpenFile(path);
@@ -529,7 +529,7 @@ namespace FrameAnimator.App.ViewModels
                 Interaction.CancelRequested = true;
         }
 
-        // ------------------------------------------------------------------ actions d'édition
+        // ------------------------------------------------------------------ edit actions
 
         private void DoUndo()
         {
@@ -563,7 +563,7 @@ namespace FrameAnimator.App.ViewModels
                     Y = y,
                     ShowInherit = true,
                     ShowWizard = true,
-                    WizardEnabled = false, // l'assistant n'est actif que pour la première frame
+                    WizardEnabled = false, // the wizard is only enabled for the first frame
                 }
                 : new OffsetDialogRequest
                 {
@@ -653,7 +653,7 @@ namespace FrameAnimator.App.ViewModels
             Render();
         }
 
-        // ------------------------------------------------------------------ souris (coordonnées relatives au centre)
+        // ------------------------------------------------------------------ mouse (coordinates relative to the center)
 
         public void CanvasMouseDown(Int32 x, Int32 y)
         {

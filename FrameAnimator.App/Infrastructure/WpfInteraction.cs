@@ -5,14 +5,14 @@ namespace FrameAnimator.App.Infrastructure
     using FrameAnimator.Core.Services;
 
     /// <summary>
-    /// <see cref="IUserInteraction"/> de l'application : messages, questions et boîtes de fichiers, exécutables depuis
-    /// n'importe quel thread (les appels sont renvoyés sur le thread d'interface).
+    /// The application's <see cref="IUserInteraction"/>: messages, questions and file dialogs, usable from
+    /// any thread (calls are marshaled to the UI thread).
     /// </summary>
     public sealed class WpfInteraction(Dispatcher dispatcher, IDialogService dialogs) : IUserInteraction
     {
         private volatile Boolean _cancelRequested;
 
-        /// <summary>Notifié (sur le thread d'interface) de l'avancement : <c>done</c> sur <c>total</c>, <c>0,0</c> = fin.</summary>
+        /// <summary>Raised (on the UI thread) with the progress: <c>done</c> out of <c>total</c>, <c>0,0</c> = finished.</summary>
         public event Action<Int32, Int32>? ProgressChanged;
 
         public Boolean CancelRequested

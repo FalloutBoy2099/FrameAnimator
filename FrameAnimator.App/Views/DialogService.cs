@@ -7,14 +7,14 @@ namespace FrameAnimator.App.Views
 	using Infrastructure;
 	using Localization;
 
-	/// <summary>Implémentation WPF de <see cref="IDialogService"/>.</summary>
+	/// <summary>WPF implementation of<see cref="IDialogService"/>.</summary>
 	public sealed class DialogService : IDialogService
     {
         private const String Caption = "Frame Animator";
 
         public Window? Owner { get; set; }
 
-        /// <summary>Traduit le nom de chaque filtre d'une boîte de fichiers (<c>Nom (*.ext)|*.ext|…</c>), pas ses motifs.</summary>
+        /// <summary>Translates the name of each filter of a file dialog (<c>Name (*.ext)|*.ext|…</c>), not its patterns.</summary>
         internal static String TranslateFilter(String filter)
         {
             String[] parts = filter.Split('|');

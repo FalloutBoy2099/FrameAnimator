@@ -6,7 +6,7 @@ namespace FrameAnimator.Core.Formats
     using System.IO;
     using System.Text;
 
-    /// <summary>Émulation de <c>TStringList.Values[]</c> de la VCL (noms insensibles à la casse, première occurrence).</summary>
+    /// <summary>Emulation of the VCL's <c>TStringList.Values[]</c> (case-insensitive names, first occurrence).</summary>
     public sealed class KeyValueList
     {
         private readonly List<String> _lines = [];
@@ -16,7 +16,7 @@ namespace FrameAnimator.Core.Formats
         public void Add(String line) => _lines.Add(line);
         public void Add(String name, String value) => _lines.Add(name + "=" + value);
 
-        /// <summary>Valeur de <paramref name="name"/> ou chaîne vide (comme <c>Values[name]</c>).</summary>
+        /// <summary>Value of <paramref name="name"/>, or an empty string (like <c>Values[name]</c>).</summary>
         public String this[String name]
         {
             get
@@ -44,7 +44,7 @@ namespace FrameAnimator.Core.Formats
         public override String ToString() => String.Join("\r\n", _lines) + (_lines.Count > 0 ? "\r\n" : "");
     }
 
-    /// <summary>Encodage ANSI utilisé par l'original pour les fichiers texte (FPR, FAS).</summary>
+    /// <summary>ANSI encoding used by the original for text files (FPR, FAS).</summary>
     public static class AnsiText
     {
         private static readonly Lazy<Encoding> AnsiEncoding = new(() =>
@@ -63,7 +63,7 @@ namespace FrameAnimator.Core.Formats
 
         public static Encoding Encoding => AnsiEncoding.Value;
 
-        /// <summary>Lit un fichier texte : UTF‑8 (avec ou sans BOM) si valide, sinon page de code ANSI.</summary>
+        /// <summary>Reads a text file: UTF-8 (with or without BOM) if valid, otherwise the ANSI code page.</summary>
         public static String ReadFile(String path)
         {
             var bytes = File.ReadAllBytes(path);
@@ -80,12 +80,12 @@ namespace FrameAnimator.Core.Formats
         public static void WriteFile(String path, String text) => File.WriteAllText(path, text, Encoding);
     }
 
-    /// <summary>Fonctions de texte propres à l'original.</summary>
+    /// <summary>Text functions specific to the original.</summary>
     public static class Csv
     {
         /// <summary>
-        /// <c>field(s, n)</c> (0x4026c0) : saute <paramref name="n"/> virgules, prend jusqu'à la suivante, puis <c>Trim</c>.
-        /// Un champ absent donne une chaîne vide.
+        /// <c>field(s, n)</c> (0x4026c0) : skips <paramref name="n"/> commas, takes up to the next one, then <c>Trim</c>.
+        /// A missing field yields an empty string.
         /// </summary>
         public static String Field(String s, Int32 n)
         {

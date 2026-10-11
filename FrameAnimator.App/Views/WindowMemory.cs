@@ -6,9 +6,9 @@ namespace FrameAnimator.App.Views
     using Infrastructure;
 
     /// <summary>
-    /// Retient la position et les dimensions des fenêtres (principale et boîtes de dialogue) d'une session à l'autre, selon
-    /// deux options de l'utilisateur. Une fenêtre s'y inscrit avec <see cref="Attach"/> dans son constructeur ; chaque type de
-    /// fenêtre a sa propre entrée dans <see cref="UserSettings"/>, au format « gauche,haut,largeur,hauteur,agrandie ».
+    /// Remembers the position and size of windows (main window and dialogs) from one session to the next, according to
+    /// two user options. A window registers here with <see cref="Attach"/> in its constructor; each window type has
+    /// its own entry in <see cref="UserSettings"/>, in the format "left,top,width,height,maximized".
     /// </summary>
     public static class WindowMemory
     {
@@ -18,7 +18,7 @@ namespace FrameAnimator.App.Views
         private static Boolean? _savePosition;
         private static Boolean? _saveSize;
 
-        /// <summary>Retenir la position de toutes les fenêtres.</summary>
+        /// <summary>Remember the position of all windows.</summary>
         public static Boolean SavePosition
         {
             get => _savePosition ??= UserSettings.Get(PositionKey) == "1";
@@ -29,7 +29,7 @@ namespace FrameAnimator.App.Views
             }
         }
 
-        /// <summary>Retenir les dimensions de toutes les fenêtres (et l'état « agrandie »).</summary>
+        /// <summary>Remember the size of all windows (and the "maximized" state).</summary>
         public static Boolean SaveSize
         {
             get => _saveSize ??= UserSettings.Get(SizeKey) == "1";
@@ -42,7 +42,7 @@ namespace FrameAnimator.App.Views
 
         public static void Attach(Window window)
         {
-            // les boîtes de message sont passagères : elles restent centrées sur la fenêtre qui les appelle
+            // message boxes are transient: they stay centered on the window that calls them
             if (window is MessageDialog)
                 return;
 
@@ -86,7 +86,7 @@ namespace FrameAnimator.App.Views
             }
         }
 
-        /// <summary>La position retenue doit encore laisser la barre de titre à portée (un écran a pu être débranché).</summary>
+        /// <summary>The remembered position must still leave the title bar within reach (a monitor may have been unplugged).</summary>
         private static Boolean IsReachable(Double left, Double top)
             => left > SystemParameters.VirtualScreenLeft - 200
                && left < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - 60
@@ -104,7 +104,7 @@ namespace FrameAnimator.App.Views
             if (!Double.IsFinite(bounds.Left) || !Double.IsFinite(bounds.Top) || bounds.Width <= 0 || bounds.Height <= 0)
                 return;
 
-            // seules les valeurs dont l'option est active sont mises à jour ; les autres gardent leur ancienne valeur
+            // only the values whose option is enabled are updated; the others keep their previous value
             String[] parts = Read(key) ?? ["", "", "", "", "0"];
             if (SavePosition)
             {

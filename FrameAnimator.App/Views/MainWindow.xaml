@@ -47,7 +47,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Barre de titre au theme de l'application : icone, menus, titre, theme, langue, boutons systeme -->
+        <!-- Title bar using the application theme: icon, menus, title, theme, language, system buttons -->
         <Grid Background="{DynamicResource LayerFillColorDefaultBrush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />

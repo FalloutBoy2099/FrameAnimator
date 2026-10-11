@@ -11,7 +11,7 @@ namespace FrameAnimator.App.Views
             TitleBarTheme.Attach(this);
             WindowMemory.Attach(this);
 
-            // version de l'assemblage : 2026.mois.jour.build
+            // assembly version: 2026.month.day.build
             VersionText.Text = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "";
         }
     }

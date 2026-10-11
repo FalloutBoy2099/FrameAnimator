@@ -6,15 +6,15 @@ namespace FrameAnimator.Core.Model
 
     public sealed class PaletteLoadException(String message, Exception? inner = null) : Exception(message, inner);
 
-    /// <summary>Extension de palette inconnue (l'original affiche <c>Unknown palette type '*.EXT'!</c>).</summary>
+    /// <summary>Unknown palette extension (the original displays<c>Unknown palette type '*.EXT'!</c>).</summary>
     public sealed class UnknownPaletteTypeException(String extension) : Exception($"Unknown palette type '*{extension}'!")
     {
         public String Extension { get; } = extension;
     }
 
     /// <summary>
-    /// Palette de 256 couleurs <c>0x00RRGGBB</c> (R en poids fort), éventuellement accompagnée de la table Fallout de
-    /// 32 768 octets (RGB555 → index) lue dans un fichier .PAL. Reproduit <c>LoadPalette</c> (0x402ca4).
+    /// 256-color palette of <c>0x00RRGGBB</c> entries (R in the high byte), optionally accompanied by the Fallout table of
+    /// 32,768 bytes (RGB555 → index) read from a .PAL file. Reproduces <c>LoadPalette</c> (0x402ca4).
     /// </summary>
     public sealed class Palette
     {
@@ -23,10 +23,10 @@ namespace FrameAnimator.Core.Model
 
         public Int32[] Colors { get; } = new Int32[Size];
 
-        /// <summary><c>null</c> pour une palette .ACT.</summary>
+        /// <summary><c>null</c> for an .ACT palette.</summary>
         public Byte[]? FalloutTable { get; private set; }
 
-        /// <summary>Chemin du fichier d'origine (vide pour la palette interne).</summary>
+        /// <summary>Path of the original file (empty for the built-in palette).</summary>
         public String FileName { get; set; } = "";
 
         public Int32 this[Int32 index] => Colors[index];
@@ -38,7 +38,7 @@ namespace FrameAnimator.Core.Model
             return p;
         }
 
-        /// <summary>Palette par défaut (ressource embarquée identique à Default.act).</summary>
+        /// <summary>Default palette (embedded resource identical to Default.act).</summary>
         public static Palette LoadDefault()
         {
             using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("FrameAnimator.Core.Default.act")
@@ -47,7 +47,7 @@ namespace FrameAnimator.Core.Model
             return p;
         }
 
-        /// <summary>Charge selon l'extension (.ACT / .PAL, insensible à la casse).</summary>
+        /// <summary>Loads according to the extension (.ACT / .PAL, case-insensitive).</summary>
         public static Palette LoadFromFile(String path)
         {
             String rawExt = Path.GetExtension(path);
@@ -67,8 +67,8 @@ namespace FrameAnimator.Core.Model
         }
 
         /// <summary>
-        /// .ACT : 256 × (R,G,B). Les octets manquants (fichier tronqué) reprennent la dernière valeur lue, comme l'original
-        /// dont le tampon de lecture n'est pas réinitialisé.
+        /// .ACT: 256 × (R,G,B). Missing bytes (truncated file) reuse the last value read, like the original,
+        /// whose read buffer is not reset.
         /// </summary>
         public static Palette LoadAct(Stream stream, String fileName = "")
         {
@@ -90,8 +90,8 @@ namespace FrameAnimator.Core.Model
         }
 
         /// <summary>
-        /// .PAL Fallout : 256 × (R,G,B) sur 6 bits (×4, troncature sur 8 bits) puis 32 768 octets de table RGB555 → index.
-        /// L'entrée 0 n'est décalée que si sa valeur est &lt; 0x40.
+        /// Fallout .PAL: 256 × (R,G,B) on 6 bits (×4, truncated to 8 bits) followed by 32,768 bytes of RGB555 → index table.
+        /// Entry 0 is shifted only if its value is &lt; 0x40.
         /// </summary>
         public static Palette LoadPal(Stream stream, String fileName = "")
         {

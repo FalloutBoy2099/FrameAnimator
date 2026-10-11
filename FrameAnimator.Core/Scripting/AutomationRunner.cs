@@ -6,16 +6,16 @@ namespace FrameAnimator.Core.Scripting
     using Formats;
     using Services;
 
-    /// <summary>Format de destination du traitement par lots (liste déroulante « Destination format »).</summary>
+    /// <summary>Destination format of the batch processing ("Destination format" drop-down list).</summary>
     public enum AutomationFormat
     {
         FprProject = 0,
         Frm = 1,
-        /// <summary>« FR0‑FR5 » : le masque se termine par <c>.FR0</c>.</summary>
+        /// <summary>"FR0‑FR5": the mask ends with <c>.FR0</c>.</summary>
         FrN = 2,
     }
 
-    /// <summary>Paramètres de la boîte « Automate » (spécification §6.4).</summary>
+    /// <summary>Parameters of the "Automate" dialog (specification §6.4).</summary>
     public sealed class AutomationOptions
     {
         public List<String> Sources { get; } = [];
@@ -24,12 +24,12 @@ namespace FrameAnimator.Core.Scripting
         public Boolean UseScript { get; set; }
         public String ScriptPath { get; set; } = "";
         public AutomationFormat Format { get; set; } = AutomationFormat.FprProject;
-        /// <summary>Masque de destination (défaut <c>*.FPR</c>). L'extension suit normalement <see cref="Format"/>.</summary>
+        /// <summary>Destination mask (default <c>*.FPR</c>). The extension normally follows <see cref="Format"/>.</summary>
         public String DestinationMask { get; set; } = "*.FPR";
-        /// <summary>Format des images de frames enregistrées avec un projet : <c>BMP</c>, <c>PNG</c> ou <c>GIF</c>.</summary>
+        /// <summary>Format of the frame images saved with a project: <c>BMP</c>, <c>PNG</c> or <c>GIF</c>.</summary>
         public String FrameExtension { get; set; } = "BMP";
 
-        /// <summary>Remplace l'extension du masque selon le format choisi (0x41227c).</summary>
+        /// <summary>Replaces the mask's extension according to the chosen format (0x41227c).</summary>
         public void ApplyFormatToMask()
         {
             String ext = Format switch { AutomationFormat.FprProject => ".FPR", AutomationFormat.Frm => ".FRM", _ => ".FR0" };
@@ -37,13 +37,13 @@ namespace FrameAnimator.Core.Scripting
         }
     }
 
-    /// <summary>Traitement par lots (« File → Automate », 0x40d35c).</summary>
+    /// <summary>Batch processing ("File → Automate", 0x40d35c).</summary>
     public sealed class AutomationRunner(ProjectService service)
     {
         public ProjectService Service { get; } = service;
         private IUserInteraction UI => Service.UI;
 
-        /// <summary>Retourne <c>true</c> si toutes les sources ont été traitées sans arrêt demandé.</summary>
+        /// <summary>Returns <c>true</c> if all sources were processed without a stop request.</summary>
         public Boolean Run(AutomationOptions options)
         {
             Boolean completed = true;

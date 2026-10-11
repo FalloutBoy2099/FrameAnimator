@@ -62,7 +62,7 @@ namespace FrameAnimator.Core.Tests
         {
             using var dir = new TempDir();
             String frm = MakeFrm(dir);
-            // .PAL homonyme : 768 octets (6 bits) + table de 32 768 octets
+            // sibling .PAL: 768 bytes (6 bits) + 32,768-byte table
             var pal = new Byte[768 + Palette.FalloutTableSize];
             File.WriteAllBytes(Path.ChangeExtension(frm, ".PAL"), pal);
 

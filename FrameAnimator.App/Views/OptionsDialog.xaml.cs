@@ -29,7 +29,7 @@ namespace FrameAnimator.App.Views
             DitherBox.ItemsSource = new[] { Localizer.T("Default"), Localizer.T("Advanced"), "Fallout" };
             DitherBox.SelectedIndex = (Int32)settings.DitherMethod;
 
-            // « 0..n-1 » (n = nombre de frames de la direction 0) ; un seul élément vide si n ≤ 0
+            // "0..n-1" (n = number of frames of direction 0); a single empty item if n <= 0
             var actions = new System.Collections.Generic.List<String>();
             if (frameCount <= 0)
                 actions.Add("");

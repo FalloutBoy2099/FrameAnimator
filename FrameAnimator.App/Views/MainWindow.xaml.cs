@@ -34,7 +34,7 @@ namespace FrameAnimator.App.Views
         {
             if (e.PropertyName != nameof(MainViewModel.SelectedFrameIndex) || Vm is not { } vm)
                 return;
-            // la frame courante (ItemIndex de la VCL) est celle qui a le focus, pas forcément la première sélectionnée
+            // the current frame (the VCL's ItemIndex) is the one that has focus, not necessarily the first one selected
             Int32 wanted = vm.SelectedFrameIndex;
             if (FrameList.SelectedIndex == wanted || (wanted >= 0 && wanted < FrameList.Items.Count && FrameList.SelectedItems.Contains(FrameList.Items[wanted])))
                 return;
@@ -82,17 +82,17 @@ namespace FrameAnimator.App.Views
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            // pendant l'automatisation, la fenêtre ne peut pas se fermer
+            // the window cannot be closed during automation
             if (Vm is { IsBusy: true })
                 e.Cancel = true;
             base.OnClosing(e);
         }
 
-        // ------------------------------------------------------------------ barre de titre
+        // ------------------------------------------------------------------ title bar
 
         private void OnStateChanged(Object? sender, EventArgs e)
         {
-            // une fenêtre agrandie à cadre personnalisé déborde de l'écran de la largeur de sa bordure
+            // a maximized window with a custom frame overflows the screen by the width of its border
             Boolean maximized = WindowState == WindowState.Maximized;
             Frame.Margin = maximized
                 ? new Thickness(SystemParameters.WindowResizeBorderThickness.Left + SystemParameters.FixedFrameVerticalBorderWidth)
@@ -138,13 +138,13 @@ namespace FrameAnimator.App.Views
 
         private ContextMenu CreateMenu(Button target)
         {
-            // le menu hérite de la police de sa cible (police de symboles du bouton) : lui donner celle de la fenêtre
+            // the menu inherits the font of its target (the button's symbol font): give it the window's font instead
             return new ContextMenu { PlacementTarget = target, Placement = PlacementMode.Bottom, FontFamily = FontFamily, FontSize = FontSize };
         }
 
         private MenuItem CreateMenuItem(String header, Boolean isCurrent)
         {
-            // une coche (glyphe de la police de symboles) indique le choix en cours
+            // a check mark (glyph from the symbol font) indicates the current choice
             return new MenuItem
             {
                 Header = header,
@@ -152,7 +152,7 @@ namespace FrameAnimator.App.Views
             };
         }
 
-        /// <summary>Commutateur de développement <c>--snapshot</c> : enregistre la fenêtre dans un PNG puis quitte.</summary>
+        /// <summary>Development switch <c>--snapshot</c>: saves the window to a PNG, then exits.</summary>
         public void SaveSnapshot(String path)
         {
             DevSnapshot.Save(this, path);

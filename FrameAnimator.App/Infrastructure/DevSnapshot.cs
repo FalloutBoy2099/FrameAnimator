@@ -6,7 +6,7 @@ namespace FrameAnimator.App.Infrastructure
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
 
-    /// <summary>Aide de développement : enregistre le rendu d'une fenêtre dans un PNG (commutateurs <c>--snapshot</c> / <c>--dialog</c>).</summary>
+    /// <summary>Development helper: saves the rendering of a window to a PNG (switches <c>--snapshot</c> / <c>--dialog</c>).</summary>
     public static class DevSnapshot
     {
         public static void Save(Window window, String path)

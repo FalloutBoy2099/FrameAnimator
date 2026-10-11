@@ -3,15 +3,15 @@ namespace FrameAnimator.Core.Model
     using System;
 
     /// <summary>
-    /// Bitmap 32 bits/pixel sans alpha. Chaque pixel est un <c>0x00RRGGBB</c> (même représentation que les entrées de palette
-    /// et que les pixels 32 bpp du TBitmap de l'original une fois masqués par <c>0xFFFFFF</c>).
+    /// 32 bits/pixel bitmap without alpha. Each pixel is a <c>0x00RRGGBB</c> (same representation as palette entries
+    /// and as the 32 bpp pixels of the original's TBitmap once masked with <c>0xFFFFFF</c>).
     /// </summary>
     public sealed class Bitmap32
     {
         public Int32 Width { get; }
         public Int32 Height { get; }
 
-        /// <summary>Pixels ligne par ligne, de haut en bas, <c>0x00RRGGBB</c>.</summary>
+        /// <summary>Pixels row by row, top to bottom,<c>0x00RRGGBB</c>.</summary>
         public Int32[] Pixels { get; }
 
         public Bitmap32(Int32 width, Int32 height)
@@ -49,7 +49,7 @@ namespace FrameAnimator.Core.Model
         public static Int32 Green(Int32 rgb) => (rgb >> 8) & 0xFF;
         public static Int32 Blue(Int32 rgb) => rgb & 0xFF;
 
-        /// <summary>Échange R et B (équivalent de <c>SwapRB</c> à 0x40342c : TColor VCL ↔ 0xRRGGBB).</summary>
+        /// <summary>Swaps R and B (equivalent of <c>SwapRB</c> at 0x40342c: VCL TColor ↔ 0xRRGGBB).</summary>
         public static Int32 SwapRb(Int32 c) => (Int32)(((UInt32)c & 0xFF000000u) | (UInt32)((c & 0xFF) << 16) | (UInt32)(c & 0xFF00) | (UInt32)((c >> 16) & 0xFF));
     }
 }

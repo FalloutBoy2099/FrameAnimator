@@ -9,7 +9,7 @@ namespace FrameAnimator.Core.Tests
     using FrameAnimator.Core.Scripting;
     using Xunit;
 
-    /// <summary>Version console : analyse de la ligne de commande, aide <c>/?</c> et commandes convert / script / automate.</summary>
+    /// <summary>Console version: command-line parsing, <c>/?</c> help, and the convert / script / automate commands.</summary>
     public class CliTests
     {
         private static (Int32 Code, String Out, String Err) RunIn(String language, params String[] args)
@@ -22,7 +22,7 @@ namespace FrameAnimator.Core.Tests
 
         private static (Int32 Code, String Out, String Err) Run(params String[] args) => RunIn("en", args);
 
-        /// <summary>FRM de deux frames écrit depuis un projet en mémoire.</summary>
+        /// <summary>Two-frame FRM written from an in-memory project.</summary>
         private static String MakeFrm(TempDir dir, String name = "hero.frm", Int32 directions = 1)
         {
             Project p = Samples.NewProject(out _, out var service);
@@ -34,7 +34,7 @@ namespace FrameAnimator.Core.Tests
             return frm;
         }
 
-        // ------------------------------------------------------------------ analyse de la ligne de commande
+        // ------------------------------------------------------------------ command-line parsing
 
         [Fact]
         public void ParsesTheThreeOptionForms()
@@ -60,7 +60,7 @@ namespace FrameAnimator.Core.Tests
         [Fact]
         public void ATrailingBackslashSwallowedByTheClosingQuoteIsRestored()
         {
-            // /out:"C:\dossier\" arrive sous la forme /out:C:\dossier" : le guillemet est le séparateur final avalé
+            // /out:"C:\dossier\" arrives as /out:C:\dossier": the quote is the trailing separator, swallowed
             String swallowed = "C:\\dossier\"";
             ParsedCommandLine line = CommandLine.Parse(["image", "/out:" + swallowed, "-o", swallowed, swallowed]);
             Assert.Equal("C:\\dossier\\", line.Get("dest"));
@@ -85,7 +85,7 @@ namespace FrameAnimator.Core.Tests
             Assert.Throws<CommandLineException>(() => CommandLine.Parse(["convert", "a.frm", "/quiet:1"]));
         }
 
-        // ------------------------------------------------------------------ mode console de l'exécutable graphique
+        // ------------------------------------------------------------------ console mode of the GUI executable
 
         [Theory]
         [InlineData("convert")]
@@ -137,7 +137,7 @@ namespace FrameAnimator.Core.Tests
             Assert.False(CliApp.IsHelpRequest([]));
         }
 
-        // ------------------------------------------------------------------ aide
+        // ------------------------------------------------------------------ help
 
         [Theory]
         [InlineData("/?")]
@@ -201,7 +201,7 @@ namespace FrameAnimator.Core.Tests
             Assert.Matches(@"^\S+", output.Trim());
         }
 
-        // ------------------------------------------------------------------ masque de destination
+        // ------------------------------------------------------------------ destination mask
 
         [Fact]
         public void DestinationMaskDefaultsToNextToTheSource()
@@ -292,7 +292,7 @@ namespace FrameAnimator.Core.Tests
             Assert.Contains("/to", error);
         }
 
-        // ------------------------------------------------------------------ erreurs de sources
+        // ------------------------------------------------------------------ source errors
 
         [Fact]
         public void MissingOrUnsupportedSourcesFailWithExitCode3()
@@ -530,7 +530,7 @@ namespace FrameAnimator.Core.Tests
             Assert.True(code == 0, error);
             Assert.True(File.Exists(dir.File("hero_copy.png")));
 
-            // un nom fixe convient à une seule source
+            // a fixed name works for a single source only
             (code, _, error) = Run("image", bmp, "/out:" + dir.File("single.gif"), "/quiet");
             Assert.True(code == 0, error);
             Assert.True(File.Exists(dir.File("single.gif")));
@@ -550,7 +550,7 @@ namespace FrameAnimator.Core.Tests
             for (Int32 i = 0; i < count; i++)
                 Assert.True(File.Exists(dir.File($"walk_{i}.png")), $"walk_{i}.png");
 
-            // avec un nom fixe, plusieurs images ne tiennent pas dans un seul fichier
+            // with a fixed name, several images do not fit in a single file
             (code, _, error) = Run("image", gif, "/out:" + dir.File("one.png"), "/quiet");
             Assert.Equal(CliApp.OperationFailed, code);
             Assert.Contains("names a single file", error);

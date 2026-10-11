@@ -5,8 +5,8 @@ namespace FrameAnimator.Core.Model
     using System.Linq;
 
     /// <summary>
-    /// État complet d'un projet Frame Animator : 6 directions, palette, réglages, fichiers associés, pile d'annulation.
-    /// Équivalent des champs de la fenêtre principale <c>TfrmFrameAnimator</c> (voir spécification §3.1).
+    /// Complete state of a Frame Animator project: 6 directions, palette, settings, associated files, undo stack.
+    /// Equivalent of the fields of the main window <c>TfrmFrameAnimator</c> (see specification §3.1).
     /// </summary>
     public sealed class Project
     {
@@ -22,27 +22,27 @@ namespace FrameAnimator.Core.Model
 
         public UndoStack Undo { get; } = new();
 
-        /// <summary>Chemin du projet/FRM courant (vide si « Untitled »).</summary>
+        /// <summary>Path of the current project/FRM (empty if "Untitled").</summary>
         public String ProjectFile { get; set; } = "";
 
-        /// <summary>Clé <c>Background=</c> du FPR (fichier BMP de fond, vide si aucun).</summary>
+        /// <summary>Key <c>Background=</c> of the FPR (background BMP file, empty if none).</summary>
         public String BackgroundFile { get; set; } = "";
 
-        /// <summary>Image de fond chargée (affichée centrée derrière les frames), ou <c>null</c>.</summary>
+        /// <summary>Loaded background image (displayed centered behind the frames), or <c>null</c>.</summary>
         public Bitmap32? Background { get; set; }
 
-        /// <summary>Clé <c>FRM=</c> du FPR (dernier FRM créé).</summary>
+        /// <summary>Key <c>FRM=</c> of the FPR (last FRM created).</summary>
         public String FrmFile { get; set; } = "";
 
-        /// <summary>Clé <c>Pallete=</c> du FPR : fichier de la palette courante (<see cref="Palette.FileName"/>).</summary>
+        /// <summary>Key <c>Pallete=</c> of the FPR: file of the current palette (<see cref="Palette.FileName"/>).</summary>
         public String PaletteFile => Palette.FileName;
 
-        /// <summary>Direction actuellement affichée.</summary>
+        /// <summary>Direction currently displayed.</summary>
         public Int32 CurrentDirection { get; set; }
 
         public Direction Dir(Int32 index) => Directions[index];
 
-        /// <summary>Remet un projet vide (sans toucher à la palette — voir <see cref="ProjectService.NewProject"/>).</summary>
+        /// <summary>Resets to an empty project (without touching the palette — see<see cref="ProjectService.NewProject"/>).</summary>
         public void ClearContent()
         {
             foreach (var d in Directions)
@@ -56,7 +56,7 @@ namespace FrameAnimator.Core.Model
             CurrentDirection = 0;
         }
 
-        /// <summary>Titre de fenêtre : nom du projet ou « Untitled.fpr ».</summary>
+        /// <summary>Window title: project name or "Untitled.fpr".</summary>
         public String Title => String.IsNullOrEmpty(ProjectFile) ? "Untitled.fpr" : Path.GetFileName(ProjectFile);
     }
 }

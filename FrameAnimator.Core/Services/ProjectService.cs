@@ -10,36 +10,36 @@ namespace FrameAnimator.Core.Services
     using Model;
 
     /// <summary>
-    /// Opérations de haut niveau sur un <see cref="Project"/> : nouveau projet, chargement de palette / fond / images /
-    /// FPR / FRM, enregistrement de FPR / FRM. Chaque méthode reproduit la séquence et les messages de l'original
-    /// (spécification §4 et §8) ; les erreurs sont signalées via <see cref="IUserInteraction"/> et un résultat booléen.
+    /// High-level operations on a <see cref="Project"/>: new project, loading of palette / background / images /
+    /// FPR / FRM, saving of FPR / FRM. Each method reproduces the sequence and messages of the original
+    /// (specification §4 and §8); errors are reported through <see cref="IUserInteraction"/> and a boolean result.
     /// </summary>
     public sealed class ProjectService(Project project, IUserInteraction ui, String? appDirectory = null)
     {
         public Project Project { get; } = project;
         public IUserInteraction UI { get; } = ui;
 
-        /// <summary>Dossier contenant <c>Default.act</c> (dossier de l'exécutable dans l'original).</summary>
+        /// <summary>Folder containing <c>Default.act</c> (the executable's folder in the original).</summary>
         public String AppDirectory { get; } = appDirectory ?? AppContext.BaseDirectory;
 
         /// <summary>
-        /// <c>true</c> (défaut, comportement de l'original) : l'ouverture d'un FRM sans palette <c>.PAL</c> voisine pose la question
-        /// « Use palette '…'? ». <c>false</c> : la palette courante est conservée sans question (réponse « oui »).
+        /// <c>true</c> (default, original behavior): opening an FRM without a neighboring <c>.PAL</c> palette asks the question
+        /// "Use palette '…'?". <c>false</c>: the current palette is kept without asking (answer "yes").
         /// </summary>
         public Boolean ConfirmPaletteOnOpen { get; set; } = true;
 
-        /// <summary>Déclenché après toute opération qui modifie le projet (pour rafraîchir une interface).</summary>
+        /// <summary>Raised after any operation that modifies the project (to refresh a UI).</summary>
         public event EventHandler? Changed;
 
         private void RaiseChanged() => Changed?.Invoke(this, EventArgs.Empty);
 
         private static String Name(String path) => Path.GetFileName(path);
 
-        // ------------------------------------------------------------------ nouveau projet
+        // ------------------------------------------------------------------ new project
 
         /// <summary>
-        /// <c>NewProject</c> (0x401d04) : vide les directions, remet les options par défaut et recharge <c>Default.act</c>
-        /// (depuis <see cref="AppDirectory"/> si présent, sinon depuis la ressource embarquée).
+        /// <c>NewProject</c> (0x401d04): clears the directions, resets the options to their defaults and reloads <c>Default.act</c>
+        /// (from <see cref="AppDirectory"/> if present, otherwise from the embedded resource).
         /// </summary>
         public Boolean NewProject()
         {
@@ -52,9 +52,9 @@ namespace FrameAnimator.Core.Services
             return ok;
         }
 
-        // ------------------------------------------------------------------ palette / fond
+        // ------------------------------------------------------------------ palette / background
 
-        /// <summary>Charge une palette .ACT/.PAL (0x402ca4). Retourne <c>false</c> et affiche un message en cas d'échec.</summary>
+        /// <summary>Loads an .ACT/.PAL palette (0x402ca4). Returns <c>false</c> and shows a message on failure.</summary>
         public Boolean LoadPalette(String path)
         {
             try
@@ -74,7 +74,7 @@ namespace FrameAnimator.Core.Services
             return false;
         }
 
-        /// <summary>Charge l'image de fond (BMP) (0x403230).</summary>
+        /// <summary>Loads the background image (BMP) (0x403230).</summary>
         public Boolean LoadBackground(String path)
         {
             try
@@ -93,11 +93,11 @@ namespace FrameAnimator.Core.Services
             }
         }
 
-        // ------------------------------------------------------------------ images sources
+        // ------------------------------------------------------------------ source images
 
         /// <summary>
-        /// <c>LoadFrameFile</c> (0x403f18). Charge une image BMP/GIF/PNG et ajoute la ou les frames à <paramref name="dir"/>.
-        /// <paramref name="gifIndex"/> = −1 : toutes les sous‑images d'un GIF. Retourne la dernière frame ajoutée, ou <c>null</c>.
+        /// <c>LoadFrameFile</c> (0x403f18). Loads a BMP/GIF/PNG image and adds the frame(s) to <paramref name="dir"/>.
+        /// <paramref name="gifIndex"/> = −1: all sub-images of a GIF. Returns the last frame added, or <c>null</c>.
         /// </summary>
         public Frame? LoadFrameFile(Direction dir, String path, Int32 gifIndex = -1)
         {
@@ -156,7 +156,7 @@ namespace FrameAnimator.Core.Services
             return frame;
         }
 
-        // ------------------------------------------------------------------ projet FPR
+        // ------------------------------------------------------------------ FPR project
 
         private static Int32 ToInt(String s)
         {
@@ -176,10 +176,10 @@ namespace FrameAnimator.Core.Services
             return false;
         }
 
-        /// <summary>Parse un entier comme <c>StrToInt</c> de la VCL (décimal, <c>0x…</c> ou <c>$…</c>). Lève <see cref="FormatException"/>.</summary>
+        /// <summary>Parses an integer like the VCL's <c>StrToInt</c> (decimal, <c>0x…</c> or <c>$…</c>). Throws <see cref="FormatException"/>.</summary>
         public static Int32 ParseInt(String s) => ToInt(s);
 
-        /// <summary><c>LoadProject</c> (0x4048ec) : charge un fichier .FPR.</summary>
+        /// <summary><c>LoadProject</c> (0x4048ec): loads an .FPR file.</summary>
         public Boolean LoadProject(String path)
         {
             Boolean ok = false;
@@ -237,7 +237,7 @@ namespace FrameAnimator.Core.Services
             }
             catch (OperationAbortedException)
             {
-                // choix « Non » : abandon silencieux comme dans l'original
+                // "No" choice: silent abort, as in the original
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or FormatException or ArgumentException)
             {
@@ -258,7 +258,7 @@ namespace FrameAnimator.Core.Services
                 throw new OperationAbortedException();
         }
 
-        /// <summary>Met à jour le nom du projet courant (<c>0x40c110</c>).</summary>
+        /// <summary>Updates the current project name (<c>0x40c110</c>).</summary>
         public void SetProjectFile(String path)
         {
             Project.ProjectFile = path;
@@ -266,8 +266,8 @@ namespace FrameAnimator.Core.Services
         }
 
         /// <summary>
-        /// <c>SaveProject</c> (0x4063f0). Écrit d'abord sur disque les images des frames dont le fichier n'existe pas
-        /// (nom : <c>base + "%02d%04d" + EXT</c>), puis le fichier FPR. <paramref name="framesBase"/> vide : le nom est demandé.
+        /// <c>SaveProject</c> (0x4063f0). First writes to disk the images of frames whose file does not exist
+        /// (name: <c>base + "%02d%04d" + EXT</c>), then the FPR file. Empty <paramref name="framesBase"/>: the name is prompted for.
         /// </summary>
         public Boolean SaveProject(String path, String framesBase = "")
         {
@@ -363,8 +363,8 @@ namespace FrameAnimator.Core.Services
         // ------------------------------------------------------------------ FRM
 
         /// <summary>
-        /// <c>LoadFRM</c> (0x405a28) : charge un .FRM ou un jeu .FR0‑FR5 comme projet. Impose le mode de transparence
-        /// « Palette », sans auto‑coupe, méthode de tramage « Default ».
+        /// <c>LoadFRM</c> (0x405a28): loads an .FRM or an .FR0‑FR5 set as a project. Forces the "Palette" transparency
+        /// mode, no auto-cut, "Default" dithering method.
         /// </summary>
         public Boolean LoadFrm(String path)
         {
@@ -454,7 +454,7 @@ namespace FrameAnimator.Core.Services
                         FrameMath.SetRelative(dir.Frames[f - 1], frame, rx, ry);
                     UI.Progress(f + 1, count);
                 }
-                // l'original positionne le décalage de direction après chargement de la dernière frame
+                // the original sets the direction shift after loading the last frame
                 if (dir.Count > 0)
                 {
                     FrameMath.SetShift(dir, singleDirection is null ? h.ShiftX[d] : h.ShiftX[0], singleDirection is null ? h.ShiftY[d] : h.ShiftY[0]);
@@ -463,8 +463,8 @@ namespace FrameAnimator.Core.Services
         }
 
         /// <summary>
-        /// <c>SaveFRM</c> (0x407b18) : écrit un <c>.FRM</c> ou un jeu <c>.FR0…FR5</c> (seules les extensions .FRM et .FR0 sont
-        /// acceptées). Retourne <c>false</c> avec message en cas d'échec.
+        /// <c>SaveFRM</c> (0x407b18): writes an <c>.FRM</c> or an <c>.FR0…FR5</c> set (only the .FRM and .FR0 extensions are
+        /// accepted). Returns <c>false</c> with a message on failure.
         /// </summary>
         public Boolean SaveFrm(String path)
         {
@@ -529,8 +529,8 @@ namespace FrameAnimator.Core.Services
         }
 
         /// <summary>
-        /// Action « Open Project » (<c>acOpen</c> 0x40c7e8) : nouveau projet puis ouverture d'un .FPR, ou d'un FRM / FR0‑FR5
-        /// (palette homonyme .PAL si elle se charge, sinon question « Use palette '…'? » puis éventuellement choix d'une palette).
+        /// "Open Project" action (<c>acOpen</c> 0x40c7e8): new project, then opens an .FPR, or an FRM / FR0‑FR5
+        /// (same-named .PAL palette if it loads, otherwise the question "Use palette '…'?" and then possibly a palette choice).
         /// </summary>
         public Boolean OpenFile(String path)
         {
@@ -560,7 +560,7 @@ namespace FrameAnimator.Core.Services
             return false;
         }
 
-        /// <summary>Action « Create FRM » : mémorise le chemin (clé <c>FRM=</c> du FPR) puis écrit le fichier.</summary>
+        /// <summary>"Create FRM" action: remembers the path (the FPR's <c>FRM=</c> key) then writes the file.</summary>
         public Boolean CreateFrm(String path)
         {
             Project.FrmFile = path;

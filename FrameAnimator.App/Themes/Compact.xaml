@@ -1,5 +1,5 @@
-<!-- Versions compactes des controles Fluent (police 8 pt, controles bas), proches de l'original.
-     Ce dictionnaire est charge par chaque fenetre : les styles de base Fluent doivent exister au moment de la resolution. -->
+<!-- Compact versions of the Fluent controls (8 pt font, short controls), close to the original.
+     This dictionary is loaded by each window: the base Fluent styles must exist at resolution time. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">

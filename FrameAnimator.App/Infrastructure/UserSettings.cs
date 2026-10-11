@@ -6,12 +6,12 @@ namespace FrameAnimator.App.Infrastructure
     using System.Linq;
 
     /// <summary>
-    /// Préférences de l'utilisateur propres à l'application (thème, langue, derniers dossiers, favoris) : lignes « clé=valeur »
-    /// dans <c>%LOCALAPPDATA%\FrameAnimator\settings.txt</c>. Une clé peut apparaître plusieurs fois (liste de valeurs).
+    /// The user's application-specific preferences (theme, language, last folders, favorites): "key=value" lines
+    /// in <c>%LOCALAPPDATA%\FrameAnimator\settings.txt</c>. A key may appear several times (list of values).
     /// </summary>
     public static class UserSettings
     {
-        /// <summary>Dossier du fichier de préférences ; seuls les tests le changent (le développement utilise <c>FRAMEANIMATOR_SETTINGS</c>).</summary>
+        /// <summary>Folder of the preferences file; only the tests change it (development uses <c>FRAMEANIMATOR_SETTINGS</c>).</summary>
         internal static String? DirectoryOverride { get; set; }
 
         private static String FilePath => Path.Combine(
@@ -23,10 +23,10 @@ namespace FrameAnimator.App.Infrastructure
         public static IReadOnlyList<String> GetAll(String key)
             => Read().Where(entry => entry.Key.Equals(key, StringComparison.OrdinalIgnoreCase)).Select(entry => entry.Value).ToList();
 
-        /// <summary>Mémorise une valeur unique pour la clé.</summary>
+        /// <summary>Stores a single value for the key.</summary>
         public static void Set(String key, String value) => SetAll(key, [value]);
 
-        /// <summary>Remplace toutes les valeurs de la clé ; les autres clés sont conservées telles quelles.</summary>
+        /// <summary>Replaces all values of the key; the other keys are kept as they are.</summary>
         public static void SetAll(String key, IEnumerable<String> values)
         {
             List<(String Key, String Value)> entries = Read();
@@ -53,7 +53,7 @@ namespace FrameAnimator.App.Infrastructure
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                // un fichier illisible équivaut à aucune préférence
+                // an unreadable file is equivalent to no preferences
             }
             return entries;
         }
@@ -67,7 +67,7 @@ namespace FrameAnimator.App.Infrastructure
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                // les préférences ne sont qu'un confort : ne pas pouvoir les mémoriser n'est pas une erreur
+                // preferences are only a convenience: being unable to store them is not an error
             }
         }
     }

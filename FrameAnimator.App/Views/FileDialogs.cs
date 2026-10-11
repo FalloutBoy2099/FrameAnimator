@@ -8,13 +8,13 @@ namespace FrameAnimator.App.Views
 	using Localization;
 
 	/// <summary>
-	/// Point d'entrée unique des boîtes de fichiers : la boîte de l'application (<see cref="FileDialogWindow"/>) ou, selon
-	/// <see cref="DialogPreferences.UseSystemDialogs"/>, la boîte « legacy » de Windows. Les deux retiennent le dernier dossier
-	/// utilisé, séparément pour l'ouverture et pour l'enregistrement ; seule la boîte de l'application a des favoris.
+	/// Single entry point for file dialogs: the application's own dialog (<see cref="FileDialogWindow"/>) or, depending on
+	/// <see cref="DialogPreferences.UseSystemDialogs"/>, the legacy Windows dialog. Both remember the last folder
+	/// used, separately for opening and for saving; only the application's dialog has favorites.
 	/// </summary>
 	public static class FileDialogs
     {
-        /// <summary>Boîte d'ouverture ; tableau vide si annulée.</summary>
+        /// <summary>Open dialog; empty array if canceled.</summary>
         public static String[] ShowOpen(Window? owner, String title, String filter, Boolean multiselect)
         {
             if (!DialogPreferences.UseSystemDialogs)
@@ -33,7 +33,7 @@ namespace FrameAnimator.App.Views
             return dialog.FileNames;
         }
 
-        /// <summary>Boîte d'enregistrement ; <c>null</c> si annulée.</summary>
+        /// <summary>Save dialog; <c>null</c> if canceled.</summary>
         public static String? ShowSave(Window? owner, String title, String filter, Int32 filterIndex, String? fileName,
             String defaultExt, Boolean overwritePrompt = true)
         {

@@ -19,7 +19,7 @@
             <TextBlock x:Name="Message" Grid.Column="1" VerticalAlignment="Center" TextWrapping="Wrap" />
         </Grid>
 
-        <!-- La barre de boutons prend la couleur de calque du thème, comme les boîtes de message du système -->
+        <!-- The button bar takes the theme's layer color, like system message boxes -->
         <Border Grid.Row="1" Padding="20,12" Background="{DynamicResource LayerFillColorDefaultBrush}">
             <StackPanel x:Name="Buttons" Orientation="Horizontal" HorizontalAlignment="Right" />
         </Border>

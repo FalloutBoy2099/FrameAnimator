@@ -9,10 +9,10 @@
         <Nullable>enable</Nullable>
         <RootNamespace>FrameAnimator.App</RootNamespace>
         <AssemblyName>FrameAnimator</AssemblyName>
-        <!-- Point d'entrée écrit à la main : mode console (commande en ligne) ou fenêtre. -->
+        <!-- Hand-written entry point: console mode (command line) or window. -->
         <StartupObject>FrameAnimator.App.Program</StartupObject>
         <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-        <!-- Thème Fluent natif de WPF (.NET 9+), encore marqué expérimental. -->
+        <!-- Native WPF Fluent theme (.NET 9+), still marked experimental. -->
         <NoWarn>$(NoWarn);WPF0001</NoWarn>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <Authors>Kain</Authors>

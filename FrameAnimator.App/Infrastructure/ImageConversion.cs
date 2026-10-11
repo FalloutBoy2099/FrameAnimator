@@ -5,12 +5,12 @@ namespace FrameAnimator.App.Infrastructure
     using System.Windows.Media.Imaging;
     using FrameAnimator.Core.Model;
 
-    /// <summary>Conversions entre <see cref="Bitmap32"/> (0x00RRGGBB) et sources WPF.</summary>
+    /// <summary>Conversions between <see cref="Bitmap32"/> (0x00RRGGBB) and WPF sources.</summary>
     public static class ImageConversion
     {
         /// <summary>
-        /// Convertit un bitmap en <see cref="BitmapSource"/> BGRA. Les pixels dont la couleur (24 bits, après OU avec
-        /// <paramref name="orMask"/>) vaut <paramref name="transparent"/> sont transparents ; <paramref name="transparent"/> &lt; 0 : opaque.
+        /// Converts a bitmap to a BGRA <see cref="BitmapSource"/>. Pixels whose color (24 bits, after OR-ing with
+        /// <paramref name="orMask"/>) equals <paramref name="transparent"/> are transparent; <paramref name="transparent"/> &lt; 0: opaque.
         /// </summary>
         public static BitmapSource ToBitmapSource(Bitmap32 bmp, Int32 transparent, Int32 orMask = 0)
         {
@@ -23,7 +23,7 @@ namespace FrameAnimator.App.Infrastructure
                 var c = (bmp.Pixels[i] & 0xFFFFFF) | orMask;
                 var o = i * 4;
                 if (c == key)
-                    continue; // octets à 0 : totalement transparent
+                    continue; // bytes left at 0: fully transparent
                 data[o] = (Byte)(c & 0xFF);
                 data[o + 1] = (Byte)((c >> 8) & 0xFF);
                 data[o + 2] = (Byte)((c >> 16) & 0xFF);

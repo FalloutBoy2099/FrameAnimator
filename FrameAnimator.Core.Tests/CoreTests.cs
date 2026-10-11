@@ -15,7 +15,7 @@ namespace FrameAnimator.Core.Tests
         [InlineData("abc.fpr", "*.*", "abc.fpr")]
         [InlineData("x.fpr", "??????ab.fpr", "xab.fpr")]
         [InlineData("hero.frm", "*.FPR", "hero.FPR")]
-        [InlineData("hero.frm", "new_*.fpr", "new_.fpr")] // les littéraux consomment la source en parallèle (sémantique REN)
+        [InlineData("hero.frm", "new_*.fpr", "new_.fpr")] // literals consume the source in parallel (REN semantics)
         [InlineData("abc.def", "?b?.*", "abc.def")]
         [InlineData("name.ext", "fixed.txt", "fixed.txt")]
         public void MaskReproducesRenSemantics(String source, String mask, String expected)
@@ -57,8 +57,8 @@ namespace FrameAnimator.Core.Tests
         public void DefaultPaletteMatchesOriginalFile()
         {
             var p = Palette.LoadDefault();
-            Assert.Equal(0x0000FF, p[0]);          // fond bleu pur
-            Assert.Equal(0xECECEC, p[1]);          // 2e entrée du fichier d'origine : EC EC EC
+            Assert.Equal(0x0000FF, p[0]);          // pure blue background
+            Assert.Equal(0xECECEC, p[1]);          // 2nd entry of the original file: EC EC EC
             Assert.Null(p.FalloutTable);
             var fromDisk = Palette.LoadFromFile(Path.Combine(AppContext.BaseDirectory, "Default.act"));
             Assert.Equal(p.Colors, fromDisk.Colors);
@@ -112,7 +112,7 @@ namespace FrameAnimator.Core.Tests
             FrameMath.AutoCut(p, d.Frames[0]);
             FrameMath.SetShift(d, 12, -9);
             Assert.Equal((12, -9), FrameMath.GetShift(d));
-            // l'auto‑coupe recadre : la base interne compense le centre du rectangle utile
+            // auto-cut crops: the internal base compensates for the center of the useful rectangle
             Assert.Equal(12 - FrameMath.CenterX(d.Frames[0]), d.ShiftBaseX);
         }
 
@@ -131,7 +131,7 @@ namespace FrameAnimator.Core.Tests
 
             p.Settings.AutoCutting = true;
             p.Settings.TransparentMode = TransparentMode.Sample;
-            p.Settings.SampleColor = 0xFF0000; // le carré devient « transparent » : le fond bleu est le contenu
+            p.Settings.SampleColor = 0xFF0000; // the square becomes "transparent": the blue background is the content
             FrameMath.AutoCut(p, f);
             Assert.Equal((0, 0, 20, 10), (f.Left, f.Top, f.Width, f.Height));
         }
@@ -141,7 +141,7 @@ namespace FrameAnimator.Core.Tests
         {
             var p = Samples.NewProject(out _, out _);
             var f = new Frame(Samples.Rect(8, 5, 0x123456, 0x123456, 0, 0, 0, 0));
-            FrameMath.AutoCut(p, f); // mode Auto : pixel (0,0) = transparent → plus rien d'opaque
+            FrameMath.AutoCut(p, f); // Auto mode: pixel (0,0) = transparent → nothing opaque left
             Assert.Equal((8, 5, 1 - 8, 1 - 5), (f.Left, f.Top, f.Width, f.Height));
         }
 
@@ -171,9 +171,9 @@ namespace FrameAnimator.Core.Tests
             var pal = Palette.LoadDefault();
             var idx = new ColorIndexer(pal, DitherMethod.Default, pal[0]);
             Assert.Equal(0, idx.Index(pal[0]));                 // transparent
-            Assert.Equal(5, idx.Index(pal[5]));                 // correspondance exacte
+            Assert.Equal(5, idx.Index(pal[5]));                 // exact match
             Assert.Equal(1, idx.Index(0xFFFFFF) is var v && v >= 1 ? 1 : 0);
-            // proche d'une entrée connue : doit retomber sur elle
+            // close to a known entry: must fall back to it
             Int32 c = pal[40];
             Int32 near = Bitmap32.Pack(Math.Min(255, Bitmap32.Red(c) + 1), Bitmap32.Green(c), Bitmap32.Blue(c));
             if (near != c)
@@ -183,21 +183,21 @@ namespace FrameAnimator.Core.Tests
         [Fact]
         public void AdvancedUsesLumaWeights()
         {
-            // deux candidats : (R+10) ou (B+10) ; la métrique pondérée préfère l'erreur sur B (poids 11 < 30)
+            // two candidates: (R+10) or (B+10); the weighted metric prefers the error on B (weight 11 < 30)
             var pal = new Palette();
-            pal.Colors[1] = 0x6464 + 0x0A0000 + 0x5000 * 0; // R=0x0A … peu importe
+            pal.Colors[1] = 0x6464 + 0x0A0000 + 0x5000 * 0; // R=0x0A … doesn't matter
             Array.Fill(pal.Colors, 0x000000);
             pal.Colors[1] = Bitmap32.Pack(100 + 10, 100, 100);
             pal.Colors[2] = Bitmap32.Pack(100, 100, 100 + 10);
             Int32 target = Bitmap32.Pack(100, 100, 100);
-            Assert.Equal(1, new ColorIndexer(pal, DitherMethod.Default, -1, legacy: false).Index(target));   // égalité de distance → 1er
+            Assert.Equal(1, new ColorIndexer(pal, DitherMethod.Default, -1, legacy: false).Index(target));   // equal distance → first one
             Assert.Equal(2, new ColorIndexer(pal, DitherMethod.Advanced, -1, legacy: false).Index(target));  // 30*100 > 11*100
         }
 
         [Fact]
         public void LegacyMatchingReproducesUnsignedDifferenceBugOfTheOriginal()
         {
-            // pal[2] est « presque exact » (R+1) mais l'original convertit la différence −1 en 4294967295 : il préfère pal[1], plus sombre.
+            // pal[2] is "almost exact" (R+1) but the original converts the difference −1 to 4294967295: it prefers pal[1], which is darker.
             var pal = new Palette();
             Array.Fill(pal.Colors, 0x000000);
             pal.Colors[1] = Bitmap32.Pack(60, 60, 60);
@@ -205,7 +205,7 @@ namespace FrameAnimator.Core.Tests
             Int32 target = Bitmap32.Pack(100, 100, 100);
             Assert.Equal(1, new ColorIndexer(pal, DitherMethod.Default, -1, legacy: true).Index(target));
             Assert.Equal(2, new ColorIndexer(pal, DitherMethod.Default, -1, legacy: false).Index(target));
-            // une couleur exacte reste exacte dans les deux modes
+            // an exact color stays exact in both modes
             pal.Colors[3] = target;
             Assert.Equal(3, new ColorIndexer(pal, DitherMethod.Default, -1, legacy: true).Index(target));
         }
@@ -261,7 +261,7 @@ namespace FrameAnimator.Core.Tests
             Assert.True(svc.SaveFrm(path), String.Join("|", ui.Errors));
 
             Byte[] b = File.ReadAllBytes(path);
-            // en‑tête (grand‑boutiste)
+            // header (big-endian)
             Assert.Equal(4, BitConverter.ToInt32(b[..4].Reverse().ToArray()));
             Assert.Equal(12, (b[4] << 8) | b[5]);
             Assert.Equal(2, (b[6] << 8) | b[7]);
@@ -270,17 +270,17 @@ namespace FrameAnimator.Core.Tests
             Int32 expectedArea = 6 * 3 * (12 + 8 * 10);
             Assert.Equal(expectedArea, (b[58] << 24) | (b[59] << 16) | (b[60] << 8) | b[61]);
             Assert.Equal(62 + expectedArea, b.Length);
-            // dataOffset[1] = taille d'une direction
+            // dataOffset[1] = size of one direction
             Int32 off1 = (b[34 + 4] << 24) | (b[34 + 5] << 16) | (b[34 + 6] << 8) | b[34 + 7];
             Assert.Equal(3 * (12 + 8 * 10), off1);
-            // 1re frame : w=8, h=10, size=80, offset = first frame offset (7,-1)
+            // 1st frame: w=8, h=10, size=80, offset = first frame offset (7,-1)
             Assert.Equal(8, (b[62] << 8) | b[63]);
             Assert.Equal(10, (b[64] << 8) | b[65]);
             Assert.Equal(80, (b[66] << 24) | (b[67] << 16) | (b[68] << 8) | b[69]);
             Assert.Equal(7, (Int16)((b[70] << 8) | b[71]));
             Assert.Equal(-1, (Int16)((b[72] << 8) | b[73]));
 
-            // relecture
+            // read back
             var p2 = Samples.NewProject(out _, out var svc2);
             Assert.True(svc2.LoadFrm(path));
             Assert.Equal(12, p2.Settings.Fps);
@@ -292,15 +292,15 @@ namespace FrameAnimator.Core.Tests
             Assert.Equal(7, p2.Directions[0].FirstFrameOffsetX);
             Assert.Equal(-1, p2.Directions[0].FirstFrameOffsetY);
 
-            // décalage de direction restitué
+            // direction offset restored
             var layoutShift = FrameMath.GetShift(p.Directions[1]);
             Assert.Equal(layoutShift, FrameMath.GetShift(p2.Directions[1]));
-            // relatif conservé
+            // relative offset preserved
             foreach (var f in p.Directions[0].Frames)
                 FrameMath.AutoCut(p, f);
             Assert.Equal(FrameMath.Relative(p.Directions[0].Frames[1], p.Directions[0].Frames[2]),
                          FrameMath.Relative(p2.Directions[0].Frames[1], p2.Directions[0].Frames[2]));
-            // pixels : la frame est devenue un bitmap 8×10 recadré rempli de la couleur du carré
+            // pixels: the frame became a cropped 8×10 bitmap filled with the square's color
             var f0 = p2.Directions[0].Frames[0];
             Assert.Equal((8, 10), (f0.Bitmap.Width, f0.Bitmap.Height));
             Assert.All(f0.Bitmap.Pixels, px => Assert.Equal(p.Palette[10], px));
@@ -318,11 +318,11 @@ namespace FrameAnimator.Core.Tests
             String path = dir.File("one.frm");
             Assert.True(svc.SaveFrm(path));
             var b = File.ReadAllBytes(path);
-            // toutes les directions autres que 0 ont un dataOffset 0
+            // all directions other than 0 have a dataOffset of 0
             for (Int32 d = 0; d < 6; d++)
                 Assert.Equal(0, (b[34 + 4 * d] << 24) | (b[35 + 4 * d] << 16) | (b[36 + 4 * d] << 8) | b[37 + 4 * d]);
 
-            Samples.Fill(p, 3, 2); // incohérent : dir 3 remplie mais pas 1,2,4,5
+            Samples.Fill(p, 3, 2); // inconsistent: dir 3 filled but not 1,2,4,5
             Assert.False(svc.SaveFrm(dir.File("bad.frm")));
             Assert.Contains("Incomplete frames set for 'bad.frm'!", ui.Errors);
             Assert.False(svc.SaveFrm(dir.File("bad.xyz")));
@@ -351,7 +351,7 @@ namespace FrameAnimator.Core.Tests
                 Assert.Equal(2, p2.Directions[d].Count);
                 Assert.Equal(FrameMath.GetShift(p.Directions[d]), FrameMath.GetShift(p2.Directions[d]));
             }
-            // FrameAreaSize contient le total des 6 directions dans chaque fichier .FRn
+            // FrameAreaSize holds the total of the 6 directions in each .FRn file
             var b = File.ReadAllBytes(dir.File("walk.FR2"));
             Int32 area = (b[58] << 24) | (b[59] << 16) | (b[60] << 8) | b[61];
             Assert.Equal(6 * 2 * (12 + 8 * 10), area);
@@ -448,7 +448,7 @@ namespace FrameAnimator.Core.Tests
                 "Offset(0)=0,0,0,0\r\nFrame(0,0)=0,0,Z:\\no\\such.bmp\r\n" +
                 String.Concat(Enumerable.Range(1, 5).Select(d => $"Offset({d})=0,0,0,0\r\n")));
             var p = Samples.NewProject(out var ui, out var svc);
-            Assert.False(svc.LoadProject(fpr));          // réponse « Non » : abandon silencieux
+            Assert.False(svc.LoadProject(fpr));          // "No" answer: silent abort
             Assert.Contains("Unable to load frame 'such.bmp'!", ui.Errors);
             Assert.Contains("Continue loading project 'broken.fpr'?", ui.Questions);
 
@@ -456,7 +456,7 @@ namespace FrameAnimator.Core.Tests
             var p2 = new Project();
             var svc2 = new ProjectService(p2, ui2, "");
             svc2.NewProject();
-            Assert.True(svc2.LoadProject(fpr));          // « Oui » : on continue
+            Assert.True(svc2.LoadProject(fpr));          // "Yes": continue
         }
     }
 

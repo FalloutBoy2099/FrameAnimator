@@ -7,10 +7,10 @@ namespace FrameAnimator.Core.Imaging
     using Model;
 
     /// <summary>
-    /// Codec PNG sans dépendance (zlib via <see cref="ZLibStream"/>). Lecture : tous les types de couleur, profondeurs 1–16,
-    /// entrelacement Adam7. <b>Le canal alpha et tRNS sont ignorés</b> : l'original (<c>TPNGObject.Assign</c> vers un
-    /// <c>TBitmap</c>) conserve les composantes RVB brutes (vérifié par comparaison d'octets, voir spécification §4.4).
-    /// Écriture : RGB 8 bits, comme <c>TPNGObject.Assign(bitmap 24 bits)</c>.
+    /// Dependency-free PNG codec (zlib via <see cref="ZLibStream"/>). Reading: all color types, bit depths 1–16,
+    /// Adam7 interlacing. <b>The alpha channel and tRNS are ignored</b>: the original (<c>TPNGObject.Assign</c> to a
+    /// <c>TBitmap</c>) keeps the raw RGB components (verified by byte comparison, see specification §4.4).
+    /// Writing: 8-bit RGB, like <c>TPNGObject.Assign(24-bit bitmap)</c>.
     /// </summary>
     public static class PngCodec
     {
@@ -233,7 +233,7 @@ namespace FrameAnimator.Core.Imaging
                         break;
                     }
             }
-            // Comportement vérifié sur l'original : le canal alpha (et tRNS) est ignoré, les composantes RVB brutes sont conservées.
+            // Behavior verified against the original: the alpha channel (and tRNS) is ignored, the raw RGB components are kept.
             _ = a;
             return Bitmap32.Pack(r, g, b);
         }
@@ -268,7 +268,7 @@ namespace FrameAnimator.Core.Imaging
             var ihdr = new Byte[13];
             BinaryPrimitives.WriteUInt32BigEndian(ihdr, (UInt32)w);
             BinaryPrimitives.WriteUInt32BigEndian(ihdr.AsSpan(4), (UInt32)h);
-            ihdr[8] = 8;  // profondeur
+            ihdr[8] = 8;  // bit depth
             ihdr[9] = 2;  // RGB
             WriteChunk(stream, "IHDR", ihdr);
             WriteChunk(stream, "IDAT", comp.ToArray());

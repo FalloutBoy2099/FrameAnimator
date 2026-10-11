@@ -4,7 +4,7 @@ namespace FrameAnimator.App.Views
     using System.Windows;
     using Localization;
 
-    /// <summary>Petite boîte qui demande une ligne de texte (par exemple le nom d'un nouveau dossier).</summary>
+    /// <summary>Small dialog that asks for a line of text (for example the name of a new folder).</summary>
     public partial class TextPromptDialog : Window
     {
         private TextPromptDialog(String title, String prompt, String initial)
@@ -24,7 +24,7 @@ namespace FrameAnimator.App.Views
 
         private String? Result { get; set; }
 
-        /// <summary>Retourne le texte saisi, ou <c>null</c> si la boîte est annulée ou le texte vide.</summary>
+        /// <summary>Returns the entered text, or <c>null</c> if the dialog is canceled or the text is empty.</summary>
         public static String? Show(Window? owner, String title, String prompt, String initial)
         {
             TextPromptDialog dialog = new(title, prompt, initial);

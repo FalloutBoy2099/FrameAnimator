@@ -12,8 +12,8 @@ namespace FrameAnimator.App.Controls
 	using Views;
 
 	/// <summary>
-	/// Zone de dessin (<c>pbxFramePaint</c>, spécification §6.2) : fond, tuile « hexes », frame fantôme puis frame sélectionnée,
-	/// toutes centrées sur le milieu du contrôle. Gère les outils Move et Pick (§6.3).
+	/// Drawing area (<c>pbxFramePaint</c>, specification §6.2): background, "hexes" tile, ghost frame, then the selected frame,
+	/// all centered on the middle of the control. Handles the Move and Pick tools (§6.3).
 	/// </summary>
 	public sealed class FrameCanvas : FrameworkElement
     {
@@ -59,7 +59,7 @@ namespace FrameAnimator.App.Controls
                 bgra.CopyPixels(data, width * 4, 0);
                 for (var i = 0; i < data.Length; i += 4)
                 {
-                    // clSilver est la couleur transparente de la tuile
+                    // clSilver is the tile's transparent color
                     if (data[i] == 0xC0 && data[i + 1] == 0xC0 && data[i + 2] == 0xC0)
                         data[i] = data[i + 1] = data[i + 2] = data[i + 3] = 0;
                 }
@@ -78,7 +78,7 @@ namespace FrameAnimator.App.Controls
             var w = ActualWidth;
             var h = ActualHeight;
             dc.DrawRectangle(new SolidColorBrush(ThemeManager.IsDark() ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xF3, 0xF3, 0xF3)), null, new Rect(0, 0, w, h));
-            // pendant Automate, le projet est modifié par un autre thread : ne pas le lire
+            // during Automate, the project is modified by another thread: do not read it
             if (_vm is null || _vm.IsBusy)
                 return;
 
@@ -142,7 +142,7 @@ namespace FrameAnimator.App.Controls
             InvalidateVisual();
         }
 
-        // ------------------------------------------------------------------ souris
+        // ------------------------------------------------------------------ mouse
 
         private (Int32 X, Int32 Y) ToLocal(MouseEventArgs e)
         {

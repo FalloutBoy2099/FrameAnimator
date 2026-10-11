@@ -10,9 +10,9 @@ namespace FrameAnimator.Core.Tests
     using FrameAnimator.Core.Services;
 
     /// <summary>
-    /// Tests « golden » : les fichiers attendus ont été produits par l'exécutable ORIGINAL (FrameAnimator.exe 2.70.1) à partir
-    /// des mêmes entrées (voir _legacy/RE/RETRO-INGENIERIE.md §10). Le portage doit les reproduire octet pour octet (FRM, BMP) ou
-    /// pixel pour pixel (PNG, encodeur différent).
+    /// Golden tests: the expected files were produced by the ORIGINAL executable (FrameAnimator.exe 2.70.1) from
+    /// the same inputs (see the reverse-engineering specification, section 10). The port must reproduce them byte for byte (FRM, BMP) or
+    /// pixel for pixel (PNG, different encoder).
     /// </summary>
     public sealed class GoldenTests : IDisposable
     {
@@ -46,13 +46,13 @@ namespace FrameAnimator.Core.Tests
         }
 
         [Theory]
-        [InlineData("A", "mine_A.frm", "orig_A.frm")]   // 1 direction, auto‑coupe, décalages, inherit
-        [InlineData("B", "mine_B.frm", "orig_B.frm")]   // 6 directions, tramage « Advanced »
-        [InlineData("C", "mine_C.frm", "orig_C.frm")]   // mode Sample + auto‑coupe
-        [InlineData("E", "mine_E.frm", "orig_E.frm")]   // palette Fallout .PAL + tramage « Fallout »
-        [InlineData("F", "mine_F.frm", "orig_F.frm")]   // GIF animé (sous‑images décalées) + PNG avec alpha
-        [InlineData("G", "mine_G.frm", "orig_G.frm")]   // relecture FRM → réécriture
-        [InlineData("H", "mine_H.frm", "orig_H.frm")]   // relecture FR0‑FR5 → FRM
+        [InlineData("A", "mine_A.frm", "orig_A.frm")]   // 1 direction, auto-cut, offsets, inherit
+        [InlineData("B", "mine_B.frm", "orig_B.frm")]   // 6 directions, "Advanced" dithering
+        [InlineData("C", "mine_C.frm", "orig_C.frm")]   // Sample mode + auto-cut
+        [InlineData("E", "mine_E.frm", "orig_E.frm")]   // Fallout .PAL palette + "Fallout" dithering
+        [InlineData("F", "mine_F.frm", "orig_F.frm")]   // animated GIF (offset sub-images) + PNG with alpha
+        [InlineData("G", "mine_G.frm", "orig_G.frm")]   // re-read FRM → rewrite
+        [InlineData("H", "mine_H.frm", "orig_H.frm")]   // re-read FR0-FR5 → FRM
         public void FrmIsByteIdenticalToOriginal(String scenario, String produced, String expected)
         {
             Run(scenario);
@@ -71,9 +71,9 @@ namespace FrameAnimator.Core.Tests
             => Regex.Replace(text.Replace(Out, "<OUT>").Replace(G, "<G>"), "(?m)^Pallete=.*$", "Pallete=<PAL>");
 
         [Theory]
-        [InlineData("S1")]   // ADD_FRAMES (masques, GIF), SET_FRAME_OFFSET/inherit, MOVE_FRAME, REMOVE_FRAMES, options, échantillon
+        [InlineData("S1")]   // ADD_FRAMES (masks, GIF), SET_FRAME_OFFSET/inherit, MOVE_FRAME, REMOVE_FRAMES, options, sample
         [InlineData("S2")]   // OPEN FRM, options, SAVE FPR + images PNG, SAVE FRM
-        [InlineData("S3")]   // OPEN FR0 + palette, tramage Fallout, SAVE avec masques `*` et `?`, images BMP
+        [InlineData("S3")]   // OPEN FR0 + palette, Fallout dithering, SAVE with masks `*` and `?`, BMP images
         public void ScriptScenariosMatchOriginal(String scenario)
         {
             Run(scenario);
@@ -99,7 +99,7 @@ namespace FrameAnimator.Core.Tests
                     case ".png":
                         Assert.Equal(PngCodec.ReadFile(exp).Pixels, PngCodec.ReadFile(got).Pixels);
                         break;
-                    default: // .BMP, .FRM : octet pour octet
+                    default: // .BMP, .FRM: byte for byte
                         Assert.Equal(File.ReadAllBytes(exp), File.ReadAllBytes(got));
                         break;
                 }

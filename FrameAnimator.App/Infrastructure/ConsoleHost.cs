@@ -8,9 +8,9 @@ namespace FrameAnimator.App.Infrastructure
     using FrameAnimator.Core.Cli;
 
     /// <summary>
-    /// Mode console de l'exécutable graphique. Le programme est une application fenêtrée (sous-système Windows) : il se rattache à la
-    /// console du processus parent (<c>AttachConsole</c>) pour y écrire, ou utilise la sortie redirigée (<c>&gt; fichier</c>, tube).
-    /// Sans console ni redirection (lancement depuis l'explorateur), le texte est affiché dans une boîte de message.
+    /// Console mode of the graphical executable. The program is a windowed application (Windows subsystem): it attaches to the
+    /// parent process's console (<c>AttachConsole</c>) to write to it, or uses the redirected output (<c>&gt; file</c>, pipe).
+    /// With neither a console nor a redirection (launched from Explorer), the text is shown in a message box.
     /// </summary>
     internal static partial class ConsoleHost
     {
@@ -50,13 +50,13 @@ namespace FrameAnimator.App.Infrastructure
 
         private static Boolean IsValid(IntPtr handle) => handle != IntPtr.Zero && handle != new IntPtr(-1);
 
-        /// <summary>Exécute la ligne de commande et retourne le code de sortie du processus.</summary>
+        /// <summary>Runs the command line and returns the process exit code.</summary>
         public static Int32 Run(String[] args)
         {
             (Boolean outputValid, Boolean errorValid) = ConnectToConsole();
             Boolean haveOutput = outputValid || errorValid;
 
-            // la console peut être en page de code 850 / 1252 : on écrit en UTF-8 et on remet la page de code d'origine ensuite
+            // the console may use code page 850 / 1252: we write in UTF-8 and restore the original code page afterwards
             UInt32 codePage = 0;
             if (outputValid && GetFileType(GetStdHandle(StdOutput)) == FileTypeChar
                 || errorValid && GetFileType(GetStdHandle(StdError)) == FileTypeChar)
@@ -65,7 +65,7 @@ namespace FrameAnimator.App.Infrastructure
                 SetConsoleOutputCP(Utf8CodePage);
             }
 
-            // chaque flux utilise sa sortie standard, à défaut l'autre, à défaut une mémoire (affichée si besoin dans une boîte de message)
+            // each stream uses its own standard output, otherwise the other one, otherwise a memory buffer (shown in a message box if needed)
             TextWriter? standardOutput = outputValid ? new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false)) { AutoFlush = true } : null;
             TextWriter? standardError = errorValid ? new StreamWriter(Console.OpenStandardError(), new UTF8Encoding(false)) { AutoFlush = true } : null;
             StringWriter memory = new StringWriter();
@@ -85,8 +85,8 @@ namespace FrameAnimator.App.Infrastructure
                     SetConsoleOutputCP(codePage);
             }
 
-            // ni console ni redirection : l'aide et les erreurs de ligne de commande s'affichent dans une boîte de message
-            // (jamais le résultat d'un traitement : un lot lancé sans console, par exemple par le planificateur, ne doit pas se bloquer)
+            // neither console nor redirection: help and command-line errors are shown in a message box
+            // (never the result of a processing run: a batch started without a console, for example by the scheduler, must not block)
             if (!haveOutput && (code == CliApp.UsageError || CliApp.IsHelpRequest(args)))
             {
                 String text = memory.ToString().Trim();
@@ -100,8 +100,8 @@ namespace FrameAnimator.App.Infrastructure
         }
 
         /// <summary>
-        /// Rend la sortie standard utilisable. Une sortie déjà redirigée est conservée ; sinon on se rattache à la console du parent
-        /// et on relie les sorties standard à <c>CONOUT$</c>. Indique pour chaque flux s'il est utilisable.
+        /// Makes the standard output usable. An already redirected output is kept; otherwise we attach to the parent's console
+        /// and bind the standard outputs to <c>CONOUT$</c>. Reports for each stream whether it is usable.
         /// </summary>
         private static (Boolean Output, Boolean Error) ConnectToConsole()
         {
@@ -124,7 +124,7 @@ namespace FrameAnimator.App.Infrastructure
             return (IsValid(GetStdHandle(StdOutput)), IsValid(GetStdHandle(StdError)));
         }
 
-        /// <summary>Langue de l'aide : celle choisie dans l'application, sinon celle de Windows.</summary>
+        /// <summary>Help language: the one chosen in the application, otherwise the Windows one.</summary>
         private static String GetLanguage()
             => UserSettings.Get("language") ?? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 

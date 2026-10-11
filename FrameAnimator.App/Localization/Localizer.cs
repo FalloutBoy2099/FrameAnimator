@@ -9,10 +9,10 @@ namespace FrameAnimator.App.Localization
     using System.Text.Json;
     using FrameAnimator.App.Infrastructure;
 
-    /// <summary>Une langue de l'interface.</summary>
+    /// <summary>A language of the interface.</summary>
     public sealed record LanguageInfo(String Code, String NativeName);
 
-    /// <summary>Texte qui suit la langue de l'interface (utilisé par l'extension de balisage XAML).</summary>
+    /// <summary>Text that follows the interface language (used by the XAML markup extension).</summary>
     public sealed class LocalizedText : ObservableObject
     {
         private String _value;
@@ -30,8 +30,8 @@ namespace FrameAnimator.App.Localization
     }
 
     /// <summary>
-    /// Traduit les textes de l'interface. Le texte anglais sert de clé : un texte sans traduction est affiché tel quel,
-    /// l'anglais fonctionne donc sans dictionnaire et une traduction manquante n'est jamais une erreur.
+    /// Translates the interface texts. The English text is the key: a text without a translation is displayed as is,
+    /// so English works without a dictionary and a missing translation is never an error.
     /// </summary>
     public sealed class Localizer
     {
@@ -47,7 +47,7 @@ namespace FrameAnimator.App.Localization
 
         public static Localizer Instance { get; } = new Localizer();
 
-        /// <summary>Langues proposées ; l'anglais n'a pas de dictionnaire.</summary>
+        /// <summary>Available languages; English has no dictionary.</summary>
         public static IReadOnlyList<LanguageInfo> Languages { get; } =
         [
             new LanguageInfo("en", "English"),
@@ -65,36 +65,36 @@ namespace FrameAnimator.App.Localization
 
         public String Language { get; private set; } = DefaultLanguage;
 
-        /// <summary>Déclenché quand la langue change.</summary>
+        /// <summary>Raised when the language changes.</summary>
         public event EventHandler? LanguageChanged;
 
-        /// <summary>Traduit un texte dans la langue courante.</summary>
+        /// <summary>Translates a text into the current language.</summary>
         public static String T(String text)
             => Instance._translations.TryGetValue(text, out String? translated) ? translated : text;
 
-        /// <summary>Traduit un format puis le remplit.</summary>
+        /// <summary>Translates a format string, then fills it in.</summary>
         public static String F(String format, params Object[] arguments)
             => String.Format(CultureInfo.CurrentCulture, T(format), arguments);
 
-        /// <summary>Langue du système si elle fait partie des nôtres, anglais sinon.</summary>
+        /// <summary>The system language if it is one of ours, English otherwise.</summary>
         public static String DetectSystemLanguage()
             => Normalize(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
-        /// <summary>Démarre dans la langue choisie auparavant, ou celle du système.</summary>
+        /// <summary>Starts in the previously chosen language, or the system one.</summary>
         public void Initialize()
         {
             String? remembered = UserSettings.Get(LanguageKey);
             Apply(remembered is not null && Languages.Any(language => language.Code == remembered) ? remembered : DetectSystemLanguage());
         }
 
-        /// <summary>Change la langue et la mémorise.</summary>
+        /// <summary>Changes the language and stores it.</summary>
         public void SetLanguage(String code)
         {
             Apply(Normalize(code));
             UserSettings.Set(LanguageKey, Language);
         }
 
-        /// <summary>Texte qui se met à jour lors d'un changement de langue.</summary>
+        /// <summary>Text that updates when the language changes.</summary>
         public LocalizedText Observe(String text)
         {
             if (!_observed.TryGetValue(text, out LocalizedText? observed))

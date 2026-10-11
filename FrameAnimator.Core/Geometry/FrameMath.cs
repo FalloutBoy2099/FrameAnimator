@@ -4,12 +4,12 @@ namespace FrameAnimator.Core.Geometry
     using Model;
 
     /// <summary>
-    /// Formules de position/décalage reprises à l'identique de l'original (spécification §5.1 à §5.4).
-    /// Toutes les divisions par 2 sont des divisions entières tronquées vers 0 (comme <c>sar</c>+<c>adc</c>).
+    /// Position/offset formulas taken over unchanged from the original (specification §5.1 to §5.4).
+    /// All divisions by 2 are integer divisions truncated toward 0 (like <c>sar</c>+<c>adc</c>).
     /// </summary>
     public static class FrameMath
     {
-        /// <summary>Couleur transparente d'une frame selon le mode (0x403470).</summary>
+        /// <summary>Transparent color of a frame according to the mode (0x403470).</summary>
         public static Int32 TransparentColor(Project project, Frame frame)
         {
             return project.Settings.TransparentMode switch
@@ -17,13 +17,13 @@ namespace FrameAnimator.Core.Geometry
                 TransparentMode.Auto => frame.Bitmap.Pixels.Length == 0 ? 0 : frame.Bitmap.Pixels[0] & 0xFFFFFF,
                 TransparentMode.Palette => project.Palette.Colors[0],
                 TransparentMode.Sample => project.Settings.SampleColor,
-                _ => 0,// valeur indéfinie dans l'original (mode inatteignable)
+                _ => 0,// undefined value in the original (unreachable mode)
             };
         }
 
         /// <summary>
-        /// Auto‑coupe (0x4036f0) : calcule et mémorise le rectangle utile de la frame. Les comparaisons se font sur 24 bits.
-        /// Une frame entièrement transparente donne volontairement les mêmes valeurs dégénérées que l'original
+        /// Auto-cut (0x4036f0): computes and stores the useful rectangle of the frame. Comparisons are done on 24 bits.
+        /// A fully transparent frame deliberately yields the same degenerate values as the original
         /// (<c>Width = 1 − bmpWidth</c>).
         /// </summary>
         public static void AutoCut(Project project, Frame frame)
@@ -66,34 +66,34 @@ namespace FrameAnimator.Core.Geometry
             frame.Height = (Int16)(maxY + 1 - top);
         }
 
-        /// <summary>Centre horizontal du rectangle utile par rapport au centre du bitmap (sans décalage).</summary>
+        /// <summary>Horizontal center of the useful rectangle relative to the bitmap center (without offset).</summary>
         public static Int32 CenterX(Frame f) => f.Left + f.Width / 2 - f.Bitmap.Width / 2;
 
-        /// <summary>Bord bas du rectangle utile par rapport au bas du bitmap (sans décalage).</summary>
+        /// <summary>Bottom edge of the useful rectangle relative to the bitmap bottom (without offset).</summary>
         public static Int32 CenterY(Frame f) => f.Top + f.Height - f.Bitmap.Height;
 
         public static Int32 PositionX(Frame f) => CenterX(f) + f.OffsetX;
         public static Int32 PositionY(Frame f) => CenterY(f) + f.OffsetY;
 
-        /// <summary>Décalage relatif de <paramref name="cur"/> par rapport à <paramref name="prev"/> (0x403550) — valeur écrite dans le FRM.</summary>
+        /// <summary>Offset of <paramref name="cur"/> relative to <paramref name="prev"/> (0x403550) — value written to the FRM.</summary>
         public static (Int32 X, Int32 Y) Relative(Frame prev, Frame cur)
             => (PositionX(cur) - PositionX(prev), PositionY(cur) - PositionY(prev));
 
-        /// <summary>Place <paramref name="cur"/> à <paramref name="x"/>,<paramref name="y"/> de <paramref name="prev"/> (0x4034a4).</summary>
+        /// <summary>Places <paramref name="cur"/> at <paramref name="x"/>,<paramref name="y"/> from <paramref name="prev"/> (0x4034a4).</summary>
         public static void SetRelative(Frame prev, Frame cur, Int32 x, Int32 y)
         {
             cur.OffsetX = PositionX(prev) + x - CenterX(cur);
             cur.OffsetY = PositionY(prev) + y - CenterY(cur);
         }
 
-        /// <summary>Décalage de direction écrit dans l'en‑tête FRM (0x403678). Exige au moins une frame.</summary>
+        /// <summary>Direction offset written to the FRM header (0x403678). Requires at least one frame.</summary>
         public static (Int32 X, Int32 Y) GetShift(Direction dir)
         {
             var f0 = dir.Frames[0];
             return (dir.ShiftBaseX + CenterX(f0), dir.ShiftBaseY + CenterY(f0));
         }
 
-        /// <summary>Inverse de <see cref="GetShift"/> (0x403610).</summary>
+        /// <summary>Inverse of <see cref="GetShift"/> (0x403610).</summary>
         public static void SetShift(Direction dir, Int32 x, Int32 y)
         {
             var f0 = dir.Frames[0];
@@ -102,8 +102,8 @@ namespace FrameAnimator.Core.Geometry
         }
 
         /// <summary>
-        /// Offset de la frame <paramref name="index"/> à l'écran, relativement au point d'ancrage du centre de la zone de dessin
-        /// (formule de <c>pbxFramePaint</c>, spécification §5.4 « Affichage »). Retourne le coin haut‑gauche du bitmap complet.
+        /// On-screen offset of frame <paramref name="index"/>, relative to the anchor point at the center of the drawing area
+        /// (formula of <c>pbxFramePaint</c>, specification §5.4 "Display"). Returns the top-left corner of the full bitmap.
         /// </summary>
         public static (Int32 X, Int32 Y) DisplayPosition(Direction dir, Int32 index, Int32 centerX, Int32 centerY)
         {

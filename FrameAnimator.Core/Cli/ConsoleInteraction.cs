@@ -5,12 +5,12 @@ namespace FrameAnimator.Core.Cli
     using FrameAnimator.Core.Services;
 
     /// <summary>
-    /// Interaction de la version console : aucune question n'est posée à l'utilisateur. Les erreurs vont sur la sortie d'erreur et
-    /// sont comptées ; les questions de l'original reçoivent une réponse fixée par l'option <c>/continue</c>.
+    /// Interaction for the console version: no question is asked to the user. Errors go to the error output and
+    /// are counted; the original's questions get an answer fixed by the <c>/continue</c> option.
     /// </summary>
     internal sealed class ConsoleInteraction(TextWriter error, Boolean continueOnError, String framesExtension) : IUserInteraction
     {
-        /// <summary>Nombre d'erreurs signalées depuis le début.</summary>
+        /// <summary>Number of errors reported since the start.</summary>
         public Int32 ErrorCount { get; private set; }
 
         public void ShowError(String message)
@@ -20,8 +20,8 @@ namespace FrameAnimator.Core.Cli
         }
 
         /// <summary>
-        /// Questions de l'original : « Stop automated routine? » (oui = arrêter) et « Continue …? » (oui = poursuivre).
-        /// Par défaut le traitement s'arrête à la première erreur ; avec <c>/continue</c> il poursuit.
+        /// Questions of the original: "Stop automated routine?" (yes = stop) and "Continue …?" (yes = proceed).
+        /// By default processing stops at the first error; with <c>/continue</c> it proceeds.
         /// </summary>
         public Boolean Confirm(String message)
         {
@@ -30,7 +30,7 @@ namespace FrameAnimator.Core.Cli
             return answer;
         }
 
-        /// <summary>Enregistrement des images d'un projet issu d'un FRM : à côté du projet, au format demandé par <c>/frames</c>.</summary>
+        /// <summary>Saving the images of a project derived from an FRM: next to the project, in the format requested by <c>/frames</c>.</summary>
         public String? PromptSaveFramesAs(String suggestedName) => suggestedName + "." + framesExtension;
 
         public String? PromptPalette() => null;

@@ -6,7 +6,7 @@ namespace FrameAnimator.Core.Imaging
     using System.Linq;
     using Model;
 
-    /// <summary>Sous‑image d'un GIF : bitmap propre (taille de la sous‑image) et sa position dans l'écran logique.</summary>
+    /// <summary>Sub-image of a GIF: its own bitmap (sub-image size) and its position in the logical screen.</summary>
     public sealed class GifSubImage(Bitmap32 bitmap, Int32 left, Int32 top, Int32 index)
     {
         public Bitmap32 Bitmap { get; } = bitmap;
@@ -14,7 +14,7 @@ namespace FrameAnimator.Core.Imaging
         public Int32 Top { get; } = top;
         public Int32 Width => Bitmap.Width;
         public Int32 Height => Bitmap.Height;
-        /// <summary>Rang de la sous‑image dans le fichier (compte aussi les sous‑images vides).</summary>
+        /// <summary>Index of the sub-image in the file (also counts empty sub-images).</summary>
         public Int32 Index { get; } = index;
     }
 
@@ -26,9 +26,9 @@ namespace FrameAnimator.Core.Imaging
     }
 
     /// <summary>
-    /// Codec GIF sans dépendance. La lecture renvoie chaque sous‑image <b>sans composition</b> ni disposal (comme
-    /// <c>TGIFSubImage.Bitmap</c> de la bibliothèque GIFImage utilisée par l'original) : les pixels « transparents » prennent
-    /// la couleur de la palette à l'index transparent. L'écriture produit un GIF87a d'une seule image.
+    /// Dependency-free GIF codec. Reading returns each sub-image <b>without compositing</b> or disposal (like
+    /// <c>TGIFSubImage.Bitmap</c> of the GIFImage library used by the original): "transparent" pixels take
+    /// the palette color at the transparent index. Writing produces a single-image GIF87a.
     /// </summary>
     public static class GifCodec
     {
@@ -62,7 +62,7 @@ namespace FrameAnimator.Core.Imaging
                     break;                  // trailer
                 if (block == 0x21)          // extension
                 {
-                    pos++;                  // étiquette
+                    pos++;                  // label
                     SkipSubBlocks(d, ref pos);
                     continue;
                 }
@@ -91,7 +91,7 @@ namespace FrameAnimator.Core.Imaging
                 if (w == 0 || h == 0)
                 {
                     imageIndex++;
-                    continue; // sous‑image « vide » : ignorée par l'original
+                    continue; // "empty" sub-image: ignored by the original
                 }
                 if (pal is null)
                     throw new ImageFormatException("No global or local color table defined");
@@ -249,11 +249,11 @@ namespace FrameAnimator.Core.Imaging
             return output;
         }
 
-        // ------------------------------------------------------------------ écriture
+        // ------------------------------------------------------------------ writing
 
         /// <summary>
-        /// Écrit une image unique. Palette = couleurs distinctes si ≤ 256, sinon chaque pixel est ramené à la couleur la
-        /// plus proche de <paramref name="fallback"/> (palette du projet).
+        /// Writes a single image. Palette = the distinct colors if ≤ 256, otherwise each pixel is mapped to the closest
+        /// color of <paramref name="fallback"/> (the project palette).
         /// </summary>
         public static void Write(Bitmap32 bitmap, Stream stream, Palette? fallback = null)
         {

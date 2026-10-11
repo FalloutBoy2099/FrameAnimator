@@ -53,7 +53,7 @@ namespace FrameAnimator.Core.Tests
             Assert.Equal(DitherMethod.Advanced, p.Settings.DitherMethod);
             Assert.Equal(2, p.Directions[0].FirstFrameOffsetX);
             Assert.Equal(2, p.Directions[0].FirstFrameOffsetY);
-            // MOVE_FRAME,0,-1,0 : la dernière frame (img2) est passée en tête
+            // MOVE_FRAME,0,-1,0 : the last frame (img2) is moved to the front
             Assert.EndsWith("img2.bmp", p.Directions[0].Frames[0].FileName);
             Assert.True(File.Exists(dir.File("out.fpr")));
             Assert.Equal(dir.File("out.fpr"), p.ProjectFile);
@@ -66,7 +66,7 @@ namespace FrameAnimator.Core.Tests
             using var dir = new TempDir();
             MakeImages(dir, 4);
             var p = Samples.NewProject(out var ui, out var svc);
-            p.Settings.TransparentMode = TransparentMode.Palette; // fond bleu 0000FF = palette[0]
+            p.Settings.TransparentMode = TransparentMode.Palette; // blue background 0000FF = palette[0]
             foreach (var f in Directory.GetFiles(dir.Path, "img*.bmp").OrderBy(x => x))
                 svc.LoadFrameFile(p.Directions[1], f);
             var d = p.Directions[1];
@@ -74,10 +74,10 @@ namespace FrameAnimator.Core.Tests
                 FrameMath.AutoCut(p, f);
             Int32 before2 = d.Frames[2].OffsetX, before3 = d.Frames[3].OffsetX;
             var script = Script(dir, "SET_FRAME_OFFSET,1,1,10,-3,1");
-            // La frame 1 a déjà un rectangle de 8x12 décalé de 1 px de la frame 0 : on impose un relatif de (10,-3)
+            // Frame 1 already has an 8x12 rectangle offset by 1 px from frame 0: impose a relative offset of (10,-3)
             Assert.True(new ScriptRunner(svc) { ChangeCurrentDirectory = false }.Run(script), String.Join("|", ui.Errors));
             Assert.Equal((10, -3), FrameMath.Relative(d.Frames[0], d.Frames[1]));
-            Assert.Equal(before2 + d.Frames[1].OffsetX, d.Frames[2].OffsetX);   // (la frame 1 valait 0 avant)
+            Assert.Equal(before2 + d.Frames[1].OffsetX, d.Frames[2].OffsetX);   // (frame 1 was 0 before)
             Assert.Equal(before3 + d.Frames[1].OffsetX, d.Frames[3].OffsetX);
         }
 
@@ -95,7 +95,7 @@ namespace FrameAnimator.Core.Tests
                 $"OPEN,{dir.Path}\\item.frm",
                 "SET_OPTION,FPS,9",
                 $"SAVE,{dir.Path}\\*.copy.frm");
-            // *.copy.frm sur item.frm : '*' → item, '.' → '.', « copy » littéral…
+            // *.copy.frm on item.frm: '*' → item, '.' → '.', literal "copy"…
             Assert.True(new ScriptRunner(svc) { ChangeCurrentDirectory = false }.Run(script), String.Join("|", ui.Errors));
             String expectedName = NameMask.Apply("item.frm", "*.copy.frm");
             Assert.True(File.Exists(dir.File(expectedName)), expectedName);
@@ -115,9 +115,9 @@ namespace FrameAnimator.Core.Tests
             Assert.False(new ScriptRunner(svc) { ChangeCurrentDirectory = false }.Run(script));
             Assert.Equal(["Index '9' out of range\nin line 2, parameter 2"], ui.Errors);
             Assert.Contains("Continue executing script 'test.fas'?", ui.Questions);
-            Assert.Equal(10, p.Settings.Fps); // arrêt avant la 3e ligne
+            Assert.Equal(10, p.Settings.Fps); // stopped before the 3rd line
 
-            // réponse « Oui » : le script continue
+            // "Yes" answer: the script continues
             var ui2 = new SilentInteraction(true);
             var p2 = new Project();
             var svc2 = new ProjectService(p2, ui2, "");
@@ -150,9 +150,9 @@ namespace FrameAnimator.Core.Tests
             for (Int32 d = 0; d < 6; d++)
                 Samples.Fill(p, d, 5);
             String script = Script(dir,
-                "REMOVE_FRAMES,0,0,-2",   // supprime 0..3
-                "REMOVE_FRAMES,1,2",      // supprime la frame 2
-                "REMOVE_FRAMES,2",        // vide la direction 2
+                "REMOVE_FRAMES,0,0,-2",   // removes 0..3
+                "REMOVE_FRAMES,1,2",      // removes frame 2
+                "REMOVE_FRAMES,2",        // empties direction 2
                 "SET_SAMPLE_COLOR,0x112233");
             Assert.True(new ScriptRunner(svc) { ChangeCurrentDirectory = false }.Run(script), String.Join("|", ui.Errors));
             Assert.Equal(1, p.Directions[0].Count);
@@ -204,7 +204,7 @@ namespace FrameAnimator.Core.Tests
             var opt = new AutomationOptions { Format = AutomationFormat.Frm, DestinationMask = "out_*.FRM" };
             opt.Sources.Add(dir.File("src.fpr"));
             Assert.True(new AutomationRunner(svc).Run(opt), String.Join("|", ui.Errors));
-            // « out_ » consomme 4 caractères de « src.fpr » (sémantique REN) : on vérifie simplement qu'un FRM a été produit
+            // "out_" consumes 4 characters of "src.fpr" (REN semantics): we only check that an FRM was produced
             Assert.Single(Directory.GetFiles(dir.Path, "out_*.FRM"));
         }
     }
@@ -267,19 +267,19 @@ namespace FrameAnimator.Core.Tests
             ed.DragMove(1, 0, 3, -2, false);
             ed.DragMove(1, 0, 1, 1, false);
             Assert.Equal((4, -1), (d.ShiftBaseX, d.ShiftBaseY));
-            ed.Undo();                           // un seul enregistrement pour tout le glisser
+            ed.Undo();                           // a single undo record for the whole drag
             Assert.Equal((0, 0), (d.ShiftBaseX, d.ShiftBaseY));
             Assert.False(ed.CanUndo);
 
             p.Settings.LockOffsets = true;
             ed.BeginDrag();
             ed.DragMove(1, 2, 5, 5, true);
-            Assert.Equal(0, d.Frames[2].OffsetX);   // verrouillé
+            Assert.Equal(0, d.Frames[2].OffsetX);   // locked
             p.Settings.LockOffsets = false;
             ed.BeginDrag();
             ed.DragMove(1, 2, 5, 5, true);
             Assert.Equal((5, 5), (d.Frames[2].OffsetX, d.Frames[2].OffsetY));
-            Assert.Equal((5, 5), (d.Frames[3].OffsetX, d.Frames[3].OffsetY));   // Ctrl : propagation
+            Assert.Equal((5, 5), (d.Frames[3].OffsetX, d.Frames[3].OffsetY));   // Ctrl: propagation
             Assert.Equal((0, 0), (d.Frames[1].OffsetX, d.Frames[1].OffsetY));
         }
 
@@ -287,7 +287,7 @@ namespace FrameAnimator.Core.Tests
         public void WizardAndConstraintUseDirectionAngles()
         {
             var (p, ed) = Setup();
-            // dir 1 = East : angle 0 → le Y doit annuler le déplacement vertical total (ici nul)
+            // dir 1 = East : angle 0 → Y must cancel the total vertical displacement (zero here)
             Assert.Equal(0, ed.OffsetWizard(1, 5));
             Assert.Equal(100, ProjectEditor.ConstrainY(1, 10, 100, 55));
             Assert.Equal(100 - 34, ProjectEditor.ConstrainY(0, 10, 100, 55)); // tan(-36.9°)·45 = -33.8 → -34

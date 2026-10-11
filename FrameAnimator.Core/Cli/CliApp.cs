@@ -12,9 +12,9 @@ namespace FrameAnimator.Core.Cli
     using FrameAnimator.Core.Services;
 
     /// <summary>
-    /// Version console de Frame Animator : conversion, exécution de script et automatisation (<c>File &gt; Automate</c>) à partir
-    /// de la ligne de commande, plus quelques outils de diagnostic. L'aide s'obtient avec <c>/?</c>.
-    /// L'exécutable graphique l'appelle dès que sa ligne de commande est une commande (<see cref="IsConsoleInvocation"/>).
+    /// Console version of Frame Animator: conversion, script execution and automation (<c>File &gt; Automate</c>) from
+    /// the command line, plus a few diagnostic tools. Help is available with <c>/?</c>.
+    /// The GUI executable calls it as soon as its command line is a command (<see cref="IsConsoleInvocation"/>).
     /// </summary>
     public sealed class CliApp(TextWriter output, TextWriter error, String language, String exe)
     {
@@ -30,13 +30,13 @@ namespace FrameAnimator.Core.Cli
         private static readonly String[] Commands = ["convert", "image", "script", "run", "automate", "info", "decode", "encode", "help"];
 
         /// <summary>
-        /// Indique si la ligne de commande demande le mode console (commande, <c>/?</c>, <c>--help</c>, <c>--version</c>…) plutôt
-        /// que l'ouverture de la fenêtre (aucun argument, ou un fichier à ouvrir).
+        /// Indicates whether the command line requests console mode (command, <c>/?</c>, <c>--help</c>, <c>--version</c>…) rather
+        /// than opening the window (no arguments, or a file to open).
         /// </summary>
         public static Boolean IsConsoleInvocation(IReadOnlyList<String> args)
             => args.Count > 0 && (Commands.Contains(args[0], StringComparer.OrdinalIgnoreCase) || CommandLine.IsHelpOrVersion(args[0]));
 
-        /// <summary>Vrai si la ligne de commande demande l'aide ou la version (le mode console n'a alors rien d'autre à faire).</summary>
+        /// <summary>True if the command line requests help or the version (console mode then has nothing else to do).</summary>
         public static Boolean IsHelpRequest(IReadOnlyList<String> args)
             => args.Count > 0 && (args[0].Equals("help", StringComparison.OrdinalIgnoreCase) || args.Any(CommandLine.IsHelpOrVersion));
 
@@ -44,7 +44,7 @@ namespace FrameAnimator.Core.Cli
 
         private String T(String english, String french) => language == "fr" ? french : english;
 
-        /// <summary>Exécute la ligne de commande et retourne le code de sortie.</summary>
+        /// <summary>Executes the command line and returns the exit code.</summary>
         public Int32 Execute(String[] args)
         {
             ParsedCommandLine line;
@@ -161,8 +161,8 @@ namespace FrameAnimator.Core.Cli
         private static Boolean IsFolder(String path) => Directory.Exists(path) || path.EndsWith('\\') || path.EndsWith('/');
 
         /// <summary>
-        /// Masque de destination et format à partir de <c>/dest</c> (dossier ou masque) et de <c>/format</c>. Sans dossier dans le
-        /// masque, le résultat est écrit à côté de chaque source (comportement de <c>File &gt; Automate</c>).
+        /// Destination mask and format derived from <c>/dest</c> (folder or mask) and <c>/format</c>. Without a folder in the
+        /// mask, the result is written next to each source (behavior of <c>File &gt; Automate</c>).
         /// </summary>
         internal static (String Mask, AutomationFormat Format) BuildMask(String? dest, AutomationFormat? format, Boolean replaceExtension)
         {
@@ -188,7 +188,7 @@ namespace FrameAnimator.Core.Cli
             AutomationFormat resolved;
             if (format is not null && (extension.Length == 0 || replaceExtension))
             {
-                // l'extension du masque suit le format choisi, comme la liste « Destination format » de la boîte Automate
+                // the mask extension follows the chosen format, like the "Destination format" list of the Automate dialog
                 name = PathHelpers.ChangeFileExt(name, Extension(format.Value));
                 resolved = format.Value;
             }
@@ -209,8 +209,8 @@ namespace FrameAnimator.Core.Cli
         // ------------------------------------------------------------------ sources
 
         /// <summary>
-        /// Développe les jokers des sources (l'interpréteur de commandes de Windows ne le fait pas) et vérifie leur extension.
-        /// Les chemins sont rendus absolus : un script exécuté pendant le traitement change le dossier courant.
+        /// Expands wildcards in the sources (the Windows command interpreter does not do it) and checks their extension.
+        /// Paths are made absolute: a script run during processing changes the current folder.
         /// </summary>
         private List<String> ExpandSources(IEnumerable<String> patterns, String[] extensions, out Int32 problems)
         {
@@ -268,7 +268,7 @@ namespace FrameAnimator.Core.Cli
             return service;
         }
 
-        /// <summary>Chemin absolu d'un fichier donné en option ; <c>null</c> (avec message) s'il n'existe pas.</summary>
+        /// <summary>Absolute path of a file given as an option; <c>null</c> (with a message) if it does not exist.</summary>
         private String? ExistingFile(String path, String what)
         {
             String full = Path.GetFullPath(path);
@@ -353,7 +353,7 @@ namespace FrameAnimator.Core.Cli
             }
             finally
             {
-                // un script exécuté pendant le traitement a pu changer le dossier courant
+                // a script run during processing may have changed the current folder
                 Directory.SetCurrentDirectory(folder);
             }
 
@@ -373,7 +373,7 @@ namespace FrameAnimator.Core.Cli
             _ => throw new CommandLineException($"Invalid image format '{text}': use bmp, png or gif."),
         };
 
-        /// <summary>Écrit une image dans le format donné par l'extension du fichier (le GIF est réduit à la palette donnée).</summary>
+        /// <summary>Writes an image in the format given by the file extension (a GIF is reduced to the given palette).</summary>
         private static void WriteImage(Bitmap32 bitmap, String path, Palette palette)
         {
             switch (Path.GetExtension(path).ToUpperInvariant())
@@ -391,9 +391,9 @@ namespace FrameAnimator.Core.Cli
         }
 
         /// <summary>
-        /// Commande <c>image</c> : convertit des images BMP / PNG / GIF vers un autre format. Un GIF animé donne un fichier par
-        /// sous-image (<c>nom_0</c>, <c>nom_1</c>…). Destination : à côté de la source, dans un dossier, ou sous un masque
-        /// (<c>*</c> et <c>?</c> reprennent le nom de la source).
+        /// <c>image</c> command: converts BMP / PNG / GIF images to another format. An animated GIF yields one file per
+        /// sub-image (<c>name_0</c>, <c>name_1</c>…). Destination: next to the source, in a folder, or under a mask
+        /// (<c>*</c> and <c>?</c> take over the source name).
         /// </summary>
         private Int32 ConvertImages(ParsedCommandLine line)
         {
@@ -496,11 +496,11 @@ namespace FrameAnimator.Core.Cli
 
         private static Boolean HasWildcards(String name) => name.Contains('*') || name.Contains('?');
 
-        /// <summary>Insère le suffixe d'une sous-image (<c>_3</c>) avant l'extension du nom.</summary>
+        /// <summary>Inserts the sub-image suffix (<c>_3</c>) before the name's extension.</summary>
         private static String InsertSuffix(String name, String suffix)
             => suffix.Length == 0 ? name : Path.GetFileNameWithoutExtension(name) + suffix + Path.GetExtension(name);
 
-        /// <summary>Images d'un fichier : une seule pour un BMP / PNG, une par sous-image (suffixe <c>_n</c>) pour un GIF animé.</summary>
+        /// <summary>Images of a file: a single one for a BMP / PNG, one per sub-image (suffix <c>_n</c>) for an animated GIF.</summary>
         private static IEnumerable<(Bitmap32 Bitmap, String Suffix)> ReadImages(String path)
         {
             switch (Path.GetExtension(path).ToUpperInvariant())
@@ -564,7 +564,7 @@ namespace FrameAnimator.Core.Cli
             return ok ? Success : OperationFailed;
         }
 
-        /// <summary>Ouvre un projet ou un FRM comme le fait <c>File &gt; Automate</c> (palette imposée, sinon <c>.PAL</c> voisin).</summary>
+        /// <summary>Opens a project or an FRM the way <c>File &gt; Automate</c> does (forced palette, otherwise the neighboring <c>.PAL</c>).</summary>
         private Boolean OpenSource(ProjectService service, String path, String? palette)
         {
             service.NewProject();

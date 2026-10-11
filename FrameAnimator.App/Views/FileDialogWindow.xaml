@@ -55,7 +55,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Favoris puis lieux -->
+            <!-- Favorites, then places -->
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />

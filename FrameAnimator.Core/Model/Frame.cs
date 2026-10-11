@@ -4,7 +4,7 @@ namespace FrameAnimator.Core.Model
     using System.Collections.Generic;
 
     /// <summary>
-    /// Une image de l'animation (interface <c>IFrame</c> de l'original, 0x1c octets).
+    /// One frame of the animation (<c>IFrame</c> interface of the original, 0x1c bytes).
     /// </summary>
     public sealed class Frame(Bitmap32 bitmap)
     {
@@ -13,27 +13,27 @@ namespace FrameAnimator.Core.Model
         public Bitmap32 Bitmap { get; set; } = bitmap;
 
         /// <summary>
-        /// Rectangle « utile » (résultat de l'auto‑coupe) : X gauche, Y haut, largeur, hauteur. Les champs sont des
-        /// <c>int16</c> dans l'original ; ils sont recalculés par <see cref="Geometry.FrameMath.AutoCut"/>.
+        /// "Useful" rectangle (result of the auto-cut): left X, top Y, width, height. The fields are
+        /// <c>int16</c> in the original; they are recomputed by <see cref="Geometry.FrameMath.AutoCut"/>.
         /// </summary>
         public Int16 Left { get; set; }
         public Int16 Top { get; set; }
         public Int16 Width { get; set; } = (Int16)bitmap.Width;
         public Int16 Height { get; set; } = (Int16)bitmap.Height;
 
-        /// <summary>Décalage ABSOLU de la frame (voir spécification §5.4).</summary>
+        /// <summary>ABSOLUTE offset of the frame (see specification §5.4).</summary>
         public Int32 OffsetX { get; set; }
         public Int32 OffsetY { get; set; }
 
-        /// <summary>Rang de la sous‑image dans un GIF ; <see cref="NoSourceIndex"/> (0xFFFF) pour BMP/PNG/FRM.</summary>
+        /// <summary>Index of the sub-image within a GIF; <see cref="NoSourceIndex"/> (0xFFFF) for BMP/PNG/FRM.</summary>
         public UInt16 SourceIndex { get; set; } = NoSourceIndex;
 
-        /// <summary>Chemin du fichier image source (peut ne pas exister pour une frame issue d'un FRM).</summary>
+        /// <summary>Path of the source image file (may not exist for a frame coming from an FRM).</summary>
         public String FileName { get; set; } = "";
 
         public Boolean HasSourceIndex => SourceIndex != NoSourceIndex;
 
-        /// <summary>Remet le rectangle utile à l'image entière.</summary>
+        /// <summary>Resets the useful rectangle to the whole image.</summary>
         public void ResetRectangle()
         {
             Left = 0;
@@ -44,17 +44,17 @@ namespace FrameAnimator.Core.Model
     }
 
     /// <summary>
-    /// Collection de frames d'une direction (interface <c>IFrames</c> de l'original, 0x14 octets).
+    /// Collection of frames for one direction (<c>IFrames</c> interface of the original, 0x14 bytes).
     /// </summary>
     public sealed class Direction
     {
         public List<Frame> Frames { get; } = [];
 
-        /// <summary>« Frames Offset » interne : voir <see cref="Geometry.FrameMath.GetShift"/>/<c>SetShift</c> (octets +4/+8).</summary>
+        /// <summary>Internal "Frames Offset": see <see cref="Geometry.FrameMath.GetShift"/>/<c>SetShift</c> (bytes +4/+8).</summary>
         public Int32 ShiftBaseX { get; set; }
         public Int32 ShiftBaseY { get; set; }
 
-        /// <summary>Décalage écrit pour la première frame dans le FRM (octets +0xc/+0x10).</summary>
+        /// <summary>Offset written for the first frame in the FRM (bytes +0xc/+0x10).</summary>
         public Int32 FirstFrameOffsetX { get; set; }
         public Int32 FirstFrameOffsetY { get; set; }
 
@@ -66,7 +66,7 @@ namespace FrameAnimator.Core.Model
             ShiftBaseX = ShiftBaseY = FirstFrameOffsetX = FirstFrameOffsetY = 0;
         }
 
-        /// <summary>Vide uniquement les frames (comportement de <c>IFrames::Clear</c> 0x4019f0 utilisé par REMOVE_FRAMES).</summary>
+        /// <summary>Clears only the frames (behavior of <c>IFrames::Clear</c> 0x4019f0, used by REMOVE_FRAMES).</summary>
         public void ClearFrames() => Frames.Clear();
     }
 }

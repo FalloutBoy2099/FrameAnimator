@@ -31,7 +31,7 @@ namespace FrameAnimator.App
             String? dialog = null;
             for (Int32 i = 0; i < e.Args.Length; i++)
             {
-                // commutateurs de développement : n'enregistrent pas les préférences
+                // development switches: they do not save the preferences
                 if (e.Args[i] == "--snapshot" && i + 1 < e.Args.Length)
                     snapshot = e.Args[++i];
                 else if (e.Args[i] == "--dialog" && i + 1 < e.Args.Length)

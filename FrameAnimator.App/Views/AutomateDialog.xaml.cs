@@ -16,7 +16,7 @@ namespace FrameAnimator.App.Views
             InitializeComponent();
             TitleBarTheme.Attach(this);
             WindowMemory.Attach(this);
-            // le masque doit être renseigné avant le choix du format : celui-ci en remplace l'extension
+            // the mask must be set before the format is chosen: the format replaces its extension
             MaskBox.Text = _options.DestinationMask;
             PaletteBox.Text = currentPalette;
             FormatBox.ItemsSource = new[] { "FPR-Project", "FRM", "FR0-FR5" };

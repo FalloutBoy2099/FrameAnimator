@@ -4,10 +4,10 @@ namespace FrameAnimator.Core.Cli
     using System.Collections.Generic;
     using System.Linq;
 
-    /// <summary>Ligne de commande invalide (option inconnue, valeur manquante…) : le message est affiché tel quel.</summary>
+    /// <summary>Invalid command line (unknown option, missing value…): the message is displayed as is.</summary>
     internal sealed class CommandLineException(String message) : Exception(message);
 
-    /// <summary>Une option reconnue : son nom canonique, ses alias et si elle attend une valeur.</summary>
+    /// <summary>A recognized option: its canonical name, its aliases and whether it expects a value.</summary>
     internal sealed class OptionSpec(String name, Boolean takesValue, params String[] aliases)
     {
         public String Name { get; } = name;
@@ -15,7 +15,7 @@ namespace FrameAnimator.Core.Cli
         public String[] Aliases { get; } = aliases;
     }
 
-    /// <summary>Résultat de l'analyse : la commande, ses arguments positionnels et ses options.</summary>
+    /// <summary>Parsing result: the command, its positional arguments and its options.</summary>
     internal sealed class ParsedCommandLine
     {
         private readonly Dictionary<String, List<String>> _options = new(StringComparer.OrdinalIgnoreCase);
@@ -26,7 +26,7 @@ namespace FrameAnimator.Core.Cli
 
         public Boolean Has(String name) => _options.ContainsKey(name);
 
-        /// <summary>Dernière valeur donnée à l'option (la dernière l'emporte), ou <c>null</c>.</summary>
+        /// <summary>Last value given to the option (the last one wins), or <c>null</c>.</summary>
         public String? Get(String name) => _options.TryGetValue(name, out List<String>? values) ? values[^1] : null;
 
         public IReadOnlyList<String> GetAll(String name) => _options.TryGetValue(name, out List<String>? values) ? values : [];
@@ -45,9 +45,9 @@ namespace FrameAnimator.Core.Cli
     }
 
     /// <summary>
-    /// Analyse de la ligne de commande. Une option commence par <c>/</c>, <c>-</c> ou <c>--</c> ; sa valeur suit après
-    /// <c>:</c>, <c>=</c> ou un espace (<c>/to:frm</c>, <c>--to=frm</c>, <c>-to frm</c>). Les noms sont insensibles à la casse.
-    /// Un mot qui commence par <c>/</c> sans être une option connue (par exemple un chemin) reste un argument positionnel.
+    /// Command-line parsing. An option starts with <c>/</c>, <c>-</c> or <c>--</c>; its value follows after
+    /// <c>:</c>, <c>=</c> or a space (<c>/to:frm</c>, <c>--to=frm</c>, <c>-to frm</c>). Names are case-insensitive.
+    /// A word that starts with <c>/</c> without being a known option (for example a path) remains a positional argument.
     /// </summary>
     internal static class CommandLine
     {
@@ -67,9 +67,9 @@ namespace FrameAnimator.Core.Cli
         ];
 
         /// <summary>
-        /// <c>/out:"C:\dossier\"</c> : dans une ligne de commande Windows, le <c>\"</c> final est lu comme un guillemet littéral
-        /// (le programme reçoit <c>C:\dossier"</c>). Un nom de fichier ne peut pas contenir de guillemet : celui d'une fin de
-        /// valeur est donc le séparateur final qui a été avalé, on le rétablit.
+        /// <c>/out:"C:\folder\"</c>: in a Windows command line, the trailing <c>\"</c> is read as a literal quote
+        /// (the program receives <c>C:\folder"</c>). A file name cannot contain a quote: one at the end of a
+        /// value is therefore the trailing separator that was swallowed, so it is restored.
         /// </summary>
         internal static String FixTrailingQuote(String value)
             => value.EndsWith('"') && value.IndexOf('"') == value.Length - 1 ? value[..^1] + '\\' : value;
@@ -126,7 +126,7 @@ namespace FrameAnimator.Core.Cli
             return result;
         }
 
-        /// <summary>Vrai pour <c>/?</c>, <c>-?</c>, <c>-h</c>, <c>--help</c>, <c>/help</c>, <c>--version</c>, <c>/version</c>…</summary>
+        /// <summary>True for <c>/?</c>, <c>-?</c>, <c>-h</c>, <c>--help</c>, <c>/help</c>, <c>--version</c>, <c>/version</c>…</summary>
         public static Boolean IsHelpOrVersion(String token)
         {
             String body = token.StartsWith("--", StringComparison.Ordinal) ? token[2..]
@@ -138,7 +138,7 @@ namespace FrameAnimator.Core.Cli
 
         private static Boolean LooksLikeOption(String token) => TryParseOption(token, out _, out _);
 
-        /// <summary>Reconnaît une option. Un mot en <c>-</c> inconnu est une erreur ; un mot en <c>/</c> inconnu est un chemin.</summary>
+        /// <summary>Recognizes an option. An unknown word starting with <c>-</c> is an error; an unknown word starting with <c>/</c> is a path.</summary>
         private static Boolean TryParseOption(String token, out OptionSpec spec, out String? inlineValue)
         {
             spec = null!;
@@ -159,7 +159,7 @@ namespace FrameAnimator.Core.Cli
 
             Int32 separator = body.IndexOfAny([':', '=']);
             String name = separator < 0 ? body : body[..separator];
-            // « /dossier/fichier » ou « /c:\chemin » : le nom contient un séparateur de chemin => ce n'est pas une option
+            // "/folder/file" or "/c:\path": the name contains a path separator => it is not an option
             if (slash && (name.Contains('/') || name.Contains('\\')))
                 return false;
 

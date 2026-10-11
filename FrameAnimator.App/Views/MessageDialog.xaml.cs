@@ -6,7 +6,7 @@ namespace FrameAnimator.App.Views
     using Infrastructure;
     using Localization;
 
-    /// <summary>Boîte de message au thème de l'application (les boîtes du système ne suivent pas le thème sombre).</summary>
+    /// <summary>Message box using the application's theme (system message boxes do not follow the dark theme).</summary>
     public partial class MessageDialog : Window
     {
         private MessageBoxResult _result = MessageBoxResult.None;
@@ -38,7 +38,7 @@ namespace FrameAnimator.App.Views
             }
         }
 
-        /// <summary>Affiche le message et retourne le bouton choisi.</summary>
+        /// <summary>Shows the message and returns the chosen button.</summary>
         public static MessageBoxResult Show(Window? owner, String message, String caption, MessageBoxButton buttons, MessageBoxImage image)
         {
             if (DialogPreferences.UseSystemDialogs)

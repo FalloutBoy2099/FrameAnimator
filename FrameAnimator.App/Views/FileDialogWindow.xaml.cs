@@ -12,8 +12,8 @@ namespace FrameAnimator.App.Views
     using Localization;
 
     /// <summary>
-    /// Sélecteur de fichiers au thème de l'application (les boîtes du système ne suivent pas le thème sombre) :
-    /// ouverture (simple ou multiple) et enregistrement, avec filtres, navigation et confirmation d'écrasement.
+    /// File picker using the application's theme (system dialogs do not follow the dark theme):
+    /// open (single or multiple) and save, with filters, navigation and overwrite confirmation.
     /// </summary>
     public partial class FileDialogWindow : Window
     {
@@ -80,14 +80,14 @@ namespace FrameAnimator.App.Views
             };
         }
 
-        /// <summary>Boîte d'ouverture ; tableau vide si annulée.</summary>
+        /// <summary>Open dialog; empty array if canceled.</summary>
         public static String[] ShowOpen(Window? owner, String title, String filter, Boolean multiselect)
         {
             FileDialogWindow dialog = new(false, title, filter, multiselect, null, "", 1, false, true);
             return dialog.Run(owner);
         }
 
-        /// <summary>Boîte d'enregistrement ; <c>null</c> si annulée.</summary>
+        /// <summary>Save dialog; <c>null</c> if canceled.</summary>
         public static String? ShowSave(Window? owner, String title, String filter, Int32 filterIndex, String? fileName,
             String defaultExt, Boolean overwritePrompt = true)
         {
@@ -96,7 +96,7 @@ namespace FrameAnimator.App.Views
             return result.Length > 0 ? result[0] : null;
         }
 
-        /// <summary>Aperçu de développement (commutateur <c>--dialog open</c>).</summary>
+        /// <summary>Development preview (<c>--dialog open</c> switch).</summary>
         internal static Window CreateForPreview() => new FileDialogWindow(false, "Open Project",
             DialogService.TranslateFilter("All (*.FPR,*.FRM)|*.FPR;*.FRM|Project (*.FPR)|*.FPR"), true, null, "", 1, false, true);
 
@@ -112,7 +112,7 @@ namespace FrameAnimator.App.Views
             return Result;
         }
 
-        // ------------------------------------------------------------------ filtres et lieux
+        // ------------------------------------------------------------------ filters and places
 
         private static IEnumerable<FilterItem> ParseFilter(String filter)
         {
@@ -158,7 +158,7 @@ namespace FrameAnimator.App.Views
                     }
                     catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
                     {
-                        // le nom de volume est facultatif
+                        // the volume label is optional
                     }
                     String letter = drive.Name.TrimEnd('\\');
                     yield return new PlaceItem(volume.Length > 0 ? volume + " (" + letter + ")" : drive.Name, drive.Name);
@@ -215,7 +215,7 @@ namespace FrameAnimator.App.Views
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                // un dossier illisible apparaît simplement vide
+                // an unreadable folder simply appears empty
             }
             FilesList.ItemsSource = entries;
         }
@@ -293,7 +293,7 @@ namespace FrameAnimator.App.Views
             }
         }
 
-        // ------------------------------------------------------------------ favoris
+        // ------------------------------------------------------------------ favorites
 
         private static String FavoriteLabel(String path)
         {
@@ -311,7 +311,7 @@ namespace FrameAnimator.App.Views
             UpdateFavoriteButton();
         }
 
-        /// <summary>L'étoile est pleine quand le dossier courant est un favori ; son info-bulle dit ce qu'un clic fera.</summary>
+        /// <summary>The star is filled when the current folder is a favorite; its tooltip says what a click will do.</summary>
         private void UpdateFavoriteButton()
         {
             if (_directory.Length == 0)
@@ -347,7 +347,7 @@ namespace FrameAnimator.App.Views
 
         private void OnFavoritesRightClick(Object sender, MouseButtonEventArgs e)
         {
-            // le favori visé par le clic droit (sans le sélectionner : une sélection ouvrirait le dossier)
+            // the favorite targeted by the right click (without selecting it: a selection would open the folder)
             _contextFavorite = e.OriginalSource is DependencyObject source
                 && ItemsControl.ContainerFromElement(FavoritesList, source) is ListBoxItem { DataContext: PlaceItem favorite }
                 ? favorite
@@ -366,11 +366,11 @@ namespace FrameAnimator.App.Views
             }
         }
 
-        // ------------------------------------------------------------------ menu contextuel de la liste de fichiers
+        // ------------------------------------------------------------------ context menu of the file list
 
         private void OnFilesRightClick(Object sender, MouseButtonEventArgs e)
         {
-            // un clic droit sélectionne l'élément visé, comme dans l'explorateur
+            // a right click selects the targeted item, as in Explorer
             if (e.OriginalSource is DependencyObject source && ItemsControl.ContainerFromElement(FilesList, source) is ListBoxItem item
                 && !item.IsSelected)
             {
@@ -383,7 +383,7 @@ namespace FrameAnimator.App.Views
 
         private void OnFilesMenuOpened(Object sender, RoutedEventArgs e)
         {
-            // « Ajouter aux favoris » ne concerne qu'un dossier ; sans dossier visé, il vise le dossier courant
+            // "Add to favorites" only applies to a folder; with no targeted folder, it applies to the current folder
             String path = ContextFolder?.FullPath ?? _directory;
             FileMenuFavorite.Header = Localizer.T(FileDialogMemory.IsFavorite(path) ? "Remove from favorites" : "Add to favorites");
         }
@@ -398,7 +398,7 @@ namespace FrameAnimator.App.Views
             RefreshFavorites();
         }
 
-        // ------------------------------------------------------------------ nouveau dossier, actualisation
+        // ------------------------------------------------------------------ new folder, refresh
 
         private void OnNewFolder(Object sender, RoutedEventArgs e)
         {
@@ -448,7 +448,7 @@ namespace FrameAnimator.App.Views
             if (names.Count == 0)
                 return;
 
-            // un dossier saisi : on y navigue
+            // a folder was entered: navigate to it
             if (names.Count == 1 && Directory.Exists(Resolve(names[0])))
             {
                 Navigate(Resolve(names[0]));

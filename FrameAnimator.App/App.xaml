@@ -9,7 +9,7 @@
                 <ResourceDictionary Source="Themes/CompactMenu.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Icones vectorielles : Segoe Fluent Icons (Windows 11) ou Segoe MDL2 Assets (Windows 10). -->
+            <!-- Vector icons: Segoe Fluent Icons (Windows 11) or Segoe MDL2 Assets (Windows 10). -->
             <Style x:Key="Glyph" TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
                 <Setter Property="FontSize" Value="18" />
@@ -74,7 +74,7 @@
                 </Setter>
             </Style>
 
-            <!-- Boutons de la barre de titre dessinee par l'application -->
+            <!-- Buttons of the title bar drawn by the application -->
             <Style x:Key="CaptionButtonStyle" TargetType="Button">
                 <Setter Property="Width" Value="46" />
                 <Setter Property="Focusable" Value="False" />

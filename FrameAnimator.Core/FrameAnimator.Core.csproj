@@ -11,7 +11,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- Palette par défaut (index 0 = 0x0000FF = couleur de fond), identique à Default.act de l'original. -->
+        <!-- Default palette (index 0 = 0x0000FF = background color), identical to the original's Default.act. -->
         <EmbeddedResource Include="Default.act" LogicalName="FrameAnimator.Core.Default.act" />
     </ItemGroup>
 

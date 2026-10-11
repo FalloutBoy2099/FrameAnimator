@@ -5,8 +5,8 @@ namespace FrameAnimator.Core.Geometry
     using Model;
 
     /// <summary>
-    /// Conversion couleur → index de palette (0x40381c). L'indice 0 est réservé à la transparence ; les index 1..255 sont
-    /// les seuls candidats. Malgré le nom « Dithering Method » de l'original, il n'y a aucune diffusion d'erreur.
+    /// Color → palette index conversion (0x40381c). Index 0 is reserved for transparency; indices 1..255 are
+    /// the only candidates. Despite the original's name "Dithering Method", there is no error diffusion.
     /// </summary>
     public sealed class ColorIndexer
     {
@@ -18,8 +18,8 @@ namespace FrameAnimator.Core.Geometry
         private readonly Boolean _legacy;
 
         /// <param name="legacy">
-        /// Reproduit le comportement exact de l'original (bug : les différences de composantes sont converties en entiers
-        /// NON signés 32 bits avant le calcul flottant x87, voir spécification §5.3). <c>false</c> = distance mathématiquement correcte.
+        /// Reproduces the exact behavior of the original (bug: component differences are converted to 32-bit UNSIGNED
+        /// integers before the x87 floating-point computation, see specification §5.3). <c>false</c> = mathematically correct distance.
         /// </param>
         public ColorIndexer(Palette palette, DitherMethod method, Int32 transparentColor, Boolean legacy = true)
         {
@@ -87,11 +87,11 @@ namespace FrameAnimator.Core.Geometry
             return bestIndex;
         }
 
-        // ---- arithmétique x87 de l'original (précision étendue 64 bits, résultat stocké en Double) ----------------------
+        // ---- x87 arithmetic of the original (64-bit extended precision, result stored as Double) -----------------------
 
         /// <summary>
-        /// Distance de l'original (0x40381c) : chaque différence est un <c>uint32</c> (octet haut du <c>fild</c> forcé à 0),
-        /// les carrés/produits et sommes sont arrondis à 64 bits de mantisse (précision étendue), le résultat final à 53 bits.
+        /// Distance of the original (0x40381c): each difference is a <c>uint32</c> (high byte of the <c>fild</c> forced to 0),
+        /// squares/products and sums are rounded to a 64-bit mantissa (extended precision), the final result to 53 bits.
         /// </summary>
         internal static Double LegacyDistance(Int32 dr, Int32 dg, Int32 db, Boolean weighted)
         {
@@ -115,7 +115,7 @@ namespace FrameAnimator.Core.Geometry
 
         private static Int32 BitLength(UInt128 x) => 128 - (Int32)UInt128.LeadingZeroCount(x);
 
-        /// <summary>Arrondit à <paramref name="bits"/> bits significatifs (au plus proche, pair en cas d'égalité).</summary>
+        /// <summary>Rounds to <paramref name="bits"/> significant bits (to nearest, ties to even).</summary>
         private static UInt128 RoundBits(UInt128 x, Int32 bits)
         {
             var len = BitLength(x);

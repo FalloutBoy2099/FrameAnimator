@@ -4,7 +4,7 @@ namespace FrameAnimator.App.Localization
     using System.Windows.Data;
     using System.Windows.Markup;
 
-    /// <summary>Extension de balisage XAML qui affiche un texte traduit : <c>{loc:T 'Some text'}</c>.</summary>
+    /// <summary>XAML markup extension that displays a translated text: <c>{loc:T 'Some text'}</c>.</summary>
     [MarkupExtensionReturnType(typeof(String))]
     public sealed class TExtension : MarkupExtension
     {

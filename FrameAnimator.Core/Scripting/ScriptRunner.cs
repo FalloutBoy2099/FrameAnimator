@@ -8,7 +8,7 @@ namespace FrameAnimator.Core.Scripting
     using Model;
     using Services;
 
-    /// <summary>Types d'erreur de script (codes 1 à 5 de l'original).</summary>
+    /// <summary>Script error kinds (codes 1 to 5 of the original).</summary>
     public enum ScriptErrorKind
     {
         IndexOutOfRange = 1,
@@ -25,8 +25,8 @@ namespace FrameAnimator.Core.Scripting
     }
 
     /// <summary>
-    /// Interpréteur de scripts <c>.FAS</c> (0x4088bc). Une commande par ligne (<c>MOT,param,param…</c>), mot insensible à la
-    /// casse. En cas d'erreur de ligne : message puis question « Continue executing script '…'? » ; « Non » arrête le script.
+    /// Interpreter for <c>.FAS</c> scripts (0x4088bc). One command per line (<c>WORD,param,param…</c>), keyword
+    /// case-insensitive. On a line error: message, then the question "Continue executing script '…'?"; "No" stops the script.
     /// </summary>
     public sealed class ScriptRunner(ProjectService service)
     {
@@ -34,19 +34,19 @@ namespace FrameAnimator.Core.Scripting
         private Project Project => Service.Project;
         private IUserInteraction UI => Service.UI;
 
-        /// <summary>Si <c>true</c> (défaut, comme l'original), le répertoire courant devient celui du script pendant l'exécution.</summary>
+        /// <summary>If <c>true</c> (default, as in the original), the current directory becomes the script's directory during execution.</summary>
         public Boolean ChangeCurrentDirectory { get; set; } = true;
 
-        /// <summary>Ignorer les lignes vides (l'original les signale comme « Unknown keyword '' »).</summary>
+        /// <summary>Skip blank lines (the original reports them as "Unknown keyword ''").</summary>
         public Boolean SkipBlankLines { get; set; } = true;
 
-        /// <summary>Diagnostic : exception inattendue ayant interrompu le script (l'original n'affiche que « Unable to execute script »).</summary>
+        /// <summary>Diagnostic: unexpected exception that interrupted the script (the original only shows "Unable to execute script").</summary>
         public Action<Exception>? UnexpectedException { get; set; }
 
         private Int32 _paramIndex;
         private String _lastText = "";
 
-        /// <summary>Exécute le script. Retourne <c>true</c> si toutes les lignes ont été traitées (<c>false</c> si arrêté ou illisible).</summary>
+        /// <summary>Runs the script. Returns <c>true</c> if all lines were processed (<c>false</c> if stopped or unreadable).</summary>
         public Boolean Run(String scriptPath)
         {
             List<String> lines;
@@ -99,7 +99,7 @@ namespace FrameAnimator.Core.Scripting
             return l;
         }
 
-        /// <summary>Exécute une ligne ; retourne <c>false</c> si l'utilisateur choisit d'arrêter le script.</summary>
+        /// <summary>Runs one line; returns <c>false</c> if the user chooses to stop the script.</summary>
         private Boolean RunLine(String line, Int32 lineIndex, String scriptPath)
         {
             _paramIndex = 0;
@@ -133,7 +133,7 @@ namespace FrameAnimator.Core.Scripting
 
         private Boolean AskContinue(String scriptPath) => UI.Confirm($"Continue executing script '{PathHelpers.ExtractFileName(scriptPath)}'?");
 
-        // ------------------------------------------------------------------ extraction de paramètres
+        // ------------------------------------------------------------------ parameter extraction
 
         private String Field(String line, Int32 n)
         {
@@ -173,7 +173,7 @@ namespace FrameAnimator.Core.Scripting
 
         private static void Fail() => throw new ScriptException(ScriptErrorKind.OperationFailed);
 
-        // ------------------------------------------------------------------ commandes
+        // ------------------------------------------------------------------ commands
 
         private void Execute(String line)
         {

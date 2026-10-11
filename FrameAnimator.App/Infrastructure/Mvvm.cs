@@ -6,7 +6,7 @@ namespace FrameAnimator.App.Infrastructure
     using System.Runtime.CompilerServices;
     using System.Windows.Input;
 
-    /// <summary>Base des objets observables.</summary>
+    /// <summary>Base class for observable objects.</summary>
     public abstract class ObservableObject : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -24,7 +24,7 @@ namespace FrameAnimator.App.Infrastructure
         }
     }
 
-    /// <summary>Commande simple ; <see cref="RaiseCanExecuteChanged"/> force la réévaluation.</summary>
+    /// <summary>Simple command; <see cref="RaiseCanExecuteChanged"/> forces re-evaluation.</summary>
     public sealed class RelayCommand(Action execute, Func<Boolean>? canExecute = null) : ICommand
     {
         public event EventHandler? CanExecuteChanged

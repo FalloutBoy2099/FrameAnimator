@@ -5,7 +5,7 @@ namespace FrameAnimator.Core.Formats
     using System.IO;
     using System.Linq;
 
-    /// <summary>Équivalents des routines <c>SysUtils</c> de Delphi utilisées par l'original (séparateurs <c>\</c> et <c>:</c>).</summary>
+    /// <summary>Equivalents of the Delphi <c>SysUtils</c> routines used by the original (separators <c>\</c> and <c>:</c>).</summary>
     public static class PathHelpers
     {
         private static Int32 LastDelimiter(String path)
@@ -16,21 +16,21 @@ namespace FrameAnimator.Core.Formats
             return -1;
         }
 
-        /// <summary><c>ExtractFilePath</c> : répertoire avec séparateur final (chaîne vide si aucun).</summary>
+        /// <summary><c>ExtractFilePath</c> : directory with trailing separator (empty string if none).</summary>
         public static String ExtractFilePath(String path)
         {
             var i = LastDelimiter(path);
             return i < 0 ? "" : path[..(i + 1)];
         }
 
-        /// <summary><c>ExtractFileName</c> : partie après le dernier séparateur.</summary>
+        /// <summary><c>ExtractFileName</c> : part after the last separator.</summary>
         public static String ExtractFileName(String path)
         {
             var i = LastDelimiter(path);
             return i < 0 ? path : path[(i + 1)..];
         }
 
-        /// <summary><c>ExtractFileExt</c> : extension avec le point ou chaîne vide.</summary>
+        /// <summary><c>ExtractFileExt</c> : extension including the dot, or an empty string.</summary>
         public static String ExtractFileExt(String path)
         {
             var name = ExtractFileName(path);
@@ -38,7 +38,7 @@ namespace FrameAnimator.Core.Formats
             return dot < 0 ? "" : name[dot..];
         }
 
-        /// <summary><c>ExtractFileDir</c> : répertoire sans séparateur final.</summary>
+        /// <summary><c>ExtractFileDir</c> : directory without trailing separator.</summary>
         public static String ExtractFileDir(String path)
         {
             var p = ExtractFilePath(path);
@@ -47,7 +47,7 @@ namespace FrameAnimator.Core.Formats
             return p;
         }
 
-        /// <summary><c>ChangeFileExt</c> (extension fournie avec son point ; vide pour supprimer).</summary>
+        /// <summary><c>ChangeFileExt</c> (extension given with its dot; empty to remove).</summary>
         public static String ChangeFileExt(String path, String newExt)
         {
             var name = ExtractFileName(path);
@@ -57,8 +57,8 @@ namespace FrameAnimator.Core.Formats
         }
 
         /// <summary>
-        /// Fichiers correspondant à un masque avec chemin optionnel (<c>FindFirst/FindNext</c> avec attribut 0 : ni répertoires,
-        /// ni fichiers cachés/système). Résultat trié sans tenir compte de la casse (ordre NTFS).
+        /// Files matching a mask with an optional path (<c>FindFirst/FindNext</c> with attribute 0: no directories,
+        /// no hidden/system files). Result sorted case-insensitively (NTFS order).
         /// </summary>
         public static IEnumerable<String> FindFiles(String mask)
         {

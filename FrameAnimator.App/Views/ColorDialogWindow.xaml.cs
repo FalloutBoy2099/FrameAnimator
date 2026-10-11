@@ -18,7 +18,7 @@ namespace FrameAnimator.App.Views
             SetColor(initial & 0xFFFFFF);
         }
 
-        /// <summary>Couleur choisie, 0xRRGGBB.</summary>
+        /// <summary>Chosen color, 0xRRGGBB.</summary>
         public Int32 Result { get; private set; }
 
         private void SetColor(Int32 rgb)

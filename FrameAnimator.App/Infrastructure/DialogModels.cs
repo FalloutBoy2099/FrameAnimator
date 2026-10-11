@@ -4,47 +4,47 @@ namespace FrameAnimator.App.Infrastructure
     using FrameAnimator.Core.Model;
     using FrameAnimator.Core.Scripting;
 
-    /// <summary>Paramètres de la boîte « Offset » (Frames Offset / Frame Offset / First Frame Offset).</summary>
+    /// <summary>Parameters of the "Offset" dialog (Frames Offset / Frame Offset / First Frame Offset).</summary>
     public sealed class OffsetDialogRequest
     {
         public String Title { get; init; } = "Offset";
         public Int32 X { get; init; }
         public Int32 Y { get; init; }
 
-        /// <summary>Affiche la case « Inherit shift down ».</summary>
+        /// <summary>Shows the "Inherit shift down" checkbox.</summary>
         public Boolean ShowInherit { get; init; }
         public Boolean InheritEnabled { get; init; } = true;
         public Boolean InheritChecked { get; init; }
 
-        /// <summary>Affiche le bouton de l'assistant d'offset.</summary>
+        /// <summary>Shows the offset wizard button.</summary>
         public Boolean ShowWizard { get; init; }
         public Boolean WizardEnabled { get; init; }
 
-        /// <summary>Assistant : reçoit X et retourne le Y calculé.</summary>
+        /// <summary>Wizard: receives X and returns the computed Y.</summary>
         public Func<Int32, Int32>? Wizard { get; init; }
     }
 
     public readonly record struct OffsetDialogResult(Int32 X, Int32 Y, Boolean Inherit);
 
-    /// <summary>Services de dialogue (fichiers, boîtes modales) utilisés par le modèle de vue.</summary>
+    /// <summary>Dialog services (files, modal boxes) used by the view model.</summary>
     public interface IDialogService
     {
-        /// <summary>Boîte d'ouverture ; tableau vide si annulée.</summary>
+        /// <summary>Open dialog; empty array if cancelled.</summary>
         String[] OpenFiles(String title, String filter, Boolean multiSelect);
 
-        /// <summary>Boîte d'enregistrement ; <c>null</c> si annulée.</summary>
+        /// <summary>Save dialog; <c>null</c> if cancelled.</summary>
         String? SaveFile(String title, String filter, Int32 filterIndex, String? fileName, String defaultExt);
 
         OffsetDialogResult? ShowOffset(OffsetDialogRequest request);
 
-        /// <summary>Boîte Options : modifie <paramref name="settings"/> si validée.</summary>
+        /// <summary>Options dialog: modifies <paramref name="settings"/> if confirmed.</summary>
         Boolean ShowOptions(ProjectSettings settings, Int32 frameCount);
 
         AutomationOptions? ShowAutomate(String currentPalette);
 
         void ShowAbout();
 
-        /// <summary>Sélecteur de couleur (0xRRGGBB) ; <c>null</c> si annulé.</summary>
+        /// <summary>Color picker (0xRRGGBB); <c>null</c> if cancelled.</summary>
         Int32? PickColor(Int32 initial);
 
         void ShowWarning(String message);

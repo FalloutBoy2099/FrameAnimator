@@ -7,8 +7,8 @@ namespace FrameAnimator.Core.Imaging
     public sealed class ImageFormatException(String message) : Exception(message);
 
     /// <summary>
-    /// Lecture (1/4/8/16/24/32 bits, RLE4/RLE8, bitfields, haut‑bas ou bas‑haut, en‑têtes OS/2, V3, V4, V5) et écriture
-    /// (24 bits, comme l'original qui force <c>pf24bit</c> avant <c>SaveToFile</c>) de fichiers BMP.
+    /// Reading (1/4/8/16/24/32 bits, RLE4/RLE8, bitfields, top-down or bottom-up, OS/2, V3, V4, V5 headers) and writing
+    /// (24 bits, like the original, which forces <c>pf24bit</c> before <c>SaveToFile</c>) of BMP files.
     /// </summary>
     public static class BmpCodec
     {
@@ -75,7 +75,7 @@ namespace FrameAnimator.Core.Imaging
             }
             if ((compression == 3 || compression == 6) && d.Length >= 66)
             {
-                // Les masques RVB suivent l'en-tête de 40 octets (ou sont inclus dans les en-têtes V4/V5, à la même position).
+                // The RGB masks follow the 40-byte header (or are included in the V4/V5 headers, at the same position).
                 rMask = BitConverter.ToUInt32(d, 54);
                 gMask = BitConverter.ToUInt32(d, 58);
                 bMask = BitConverter.ToUInt32(d, 62);
@@ -242,7 +242,7 @@ namespace FrameAnimator.Core.Imaging
             bw.Write((Int16)24);
             bw.Write(0);
             bw.Write(imageSize);
-            bw.Write(0); // biXPelsPerMeter (0 comme TBitmap.SaveToFile de la VCL)
+            bw.Write(0); // biXPelsPerMeter (0, like VCL TBitmap.SaveToFile)
             bw.Write(0); // biYPelsPerMeter
             bw.Write(0);
             bw.Write(0);

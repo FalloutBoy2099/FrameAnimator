@@ -3,37 +3,37 @@ namespace FrameAnimator.Core.Services
     using System;
     using System.Collections.Generic;
 
-    /// <summary>Annulation d'une opération (équivalent de <c>EAbort</c> de la VCL).</summary>
+    /// <summary>Cancellation of an operation (equivalent of the VCL's <c>EAbort</c>).</summary>
     public sealed class OperationAbortedException(String? message = null) : Exception(message ?? "Operation aborted.");
 
     /// <summary>
-    /// Interactions utilisateur demandées par le cœur. Les libellés reproduisent ceux de l'original (spécification §6.5).
+    /// User interactions requested by the core. The labels reproduce those of the original (specification §6.5).
     /// </summary>
     public interface IUserInteraction
     {
-        /// <summary>Message d'erreur (<c>mtError</c>, bouton OK).</summary>
+        /// <summary>Error message (<c>mtError</c>, OK button).</summary>
         void ShowError(String message);
 
-        /// <summary>Question Oui/Non (<c>mtConfirmation</c>). Retourne <c>true</c> pour Oui.</summary>
+        /// <summary>Yes/No question (<c>mtConfirmation</c>). Returns <c>true</c> for Yes.</summary>
         Boolean Confirm(String message);
 
         /// <summary>
-        /// Boîte « Save Frames As » (BMP/PNG/GIF), pré‑remplie avec <paramref name="suggestedName"/> (nom du projet sans extension).
-        /// Retourne le chemin choisi (avec extension) ou <c>null</c> si annulé.
+        /// "Save Frames As" dialog (BMP/PNG/GIF), pre-filled with <paramref name="suggestedName"/> (project name without extension).
+        /// Returns the chosen path (with extension), or <c>null</c> if canceled.
         /// </summary>
         String? PromptSaveFramesAs(String suggestedName);
 
-        /// <summary>Boîte « Load Palette » ; retourne le chemin choisi ou <c>null</c>.</summary>
+        /// <summary>"Load Palette" dialog; returns the chosen path, or <c>null</c>.</summary>
         String? PromptPalette();
 
-        /// <summary>Progression d'une opération (<c>done</c> sur <c>total</c> ; <c>0,0</c> = fin).</summary>
+        /// <summary>Progress of an operation (<c>done</c> out of <c>total</c>; <c>0,0</c> = finished).</summary>
         void Progress(Int32 done, Int32 total);
 
-        /// <summary>Vrai si l'utilisateur a demandé l'arrêt d'un traitement automatisé (touche Échap dans l'original).</summary>
+        /// <summary>True if the user requested to stop an automated process (Esc key in the original).</summary>
         Boolean CancelRequested { get; }
     }
 
-    /// <summary>Implémentation silencieuse : toutes les erreurs sont collectées, les questions reçoivent une réponse fixe.</summary>
+    /// <summary>Silent implementation: all errors are collected, questions receive a fixed answer.</summary>
     public sealed class SilentInteraction(Boolean confirmAnswer = false) : IUserInteraction
     {
         public List<String> Errors { get; } = [];

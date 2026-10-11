@@ -6,8 +6,8 @@ namespace FrameAnimator.App.Infrastructure
     using System.Linq;
 
     /// <summary>
-    /// Ce que les boîtes de fichiers retiennent d'une fois sur l'autre : le dernier dossier utilisé (un pour l'ouverture, un autre
-    /// pour l'enregistrement) et la liste des dossiers favoris. Tout est mémorisé dans <see cref="UserSettings"/>.
+    /// What the file dialogs remember from one use to the next: the last folder used (one for opening, another one
+    /// for saving) and the list of favorite folders. Everything is stored in <see cref="UserSettings"/>.
     /// </summary>
     public static class FileDialogMemory
     {
@@ -15,7 +15,7 @@ namespace FrameAnimator.App.Infrastructure
         private const String LastSaveKey = "lastSaveDirectory";
         private const String FavoriteKey = "favorite";
 
-        /// <summary>Dernier dossier utilisé, s'il existe encore ; <c>null</c> sinon.</summary>
+        /// <summary>Last folder used, if it still exists; <c>null</c> otherwise.</summary>
         public static String? GetLastDirectory(Boolean save)
         {
             String? directory = UserSettings.Get(save ? LastSaveKey : LastOpenKey);

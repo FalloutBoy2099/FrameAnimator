@@ -3,8 +3,8 @@ namespace FrameAnimator.App.Infrastructure
     using System;
 
     /// <summary>
-    /// Choix de l'utilisateur entre les boîtes de dialogue de l'application (au thème, avec favoris) et les boîtes « legacy »
-    /// de Windows (ouverture / enregistrement de fichiers, boîtes de message). Mémorisé dans <see cref="UserSettings"/>.
+    /// The user's choice between the application's own dialogs (themed, with favorites) and the "legacy" Windows dialogs
+    /// (file open / save, message boxes). Stored in <see cref="UserSettings"/>.
     /// </summary>
     public static class DialogPreferences
     {
@@ -12,7 +12,7 @@ namespace FrameAnimator.App.Infrastructure
 
         private static Boolean? _useSystemDialogs;
 
-        /// <summary><c>true</c> : boîtes de Windows (non thémées) ; <c>false</c> (défaut) : boîtes de l'application.</summary>
+        /// <summary><c>true</c>: Windows dialogs (not themed); <c>false</c> (default): the application's dialogs.</summary>
         public static Boolean UseSystemDialogs
         {
             get => _useSystemDialogs ??= UserSettings.Get(Key) == "1";
@@ -23,7 +23,7 @@ namespace FrameAnimator.App.Infrastructure
             }
         }
 
-        /// <summary>Utilisé par les commutateurs de développement : change le choix sans le mémoriser.</summary>
+        /// <summary>Used by the development switches: changes the choice without storing it.</summary>
         internal static void Preview(Boolean useSystemDialogs) => _useSystemDialogs = useSystemDialogs;
     }
 }

@@ -23,7 +23,7 @@ namespace FrameAnimator.Core.Tests
 
     internal static class Samples
     {
-        /// <summary>Bitmap w×h rempli de <paramref name="bg"/> avec un rectangle de la couleur <paramref name="fg"/>.</summary>
+        /// <summary>w×h bitmap filled with <paramref name="bg"/> with a rectangle of color <paramref name="fg"/>.</summary>
         public static Bitmap32 Rect(Int32 w, Int32 h, Int32 bg, Int32 fg, Int32 x0, Int32 y0, Int32 x1, Int32 y1)
         {
             var b = new Bitmap32(w, h);
@@ -43,7 +43,7 @@ namespace FrameAnimator.Core.Tests
             return project;
         }
 
-        /// <summary>Remplit une direction avec <paramref name="count"/> frames de 16×16 (fond = palette[0], carré mobile).</summary>
+        /// <summary>Fills a direction with <paramref name="count"/> 16×16 frames (background = palette[0], moving square).</summary>
         public static void Fill(Project p, Int32 dir, Int32 count, Int32 fg = 0x00FF00)
         {
             Int32 bg = p.Palette[0];

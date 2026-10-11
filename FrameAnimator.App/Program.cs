@@ -5,8 +5,8 @@ namespace FrameAnimator.App
     using FrameAnimator.Core.Cli;
 
     /// <summary>
-    /// Point d'entrée unique du programme : une commande en ligne (<c>convert</c>, <c>script</c>, <c>automate</c>, <c>/?</c>…) lance le
-    /// mode console sans créer de fenêtre ; sinon (aucun argument, ou un fichier à ouvrir) l'interface graphique démarre.
+    /// Single entry point of the program: a command line (<c>convert</c>, <c>script</c>, <c>automate</c>, <c>/?</c>…) starts
+    /// console mode without creating a window; otherwise (no arguments, or a file to open) the graphical interface starts.
     /// </summary>
     internal static class Program
     {

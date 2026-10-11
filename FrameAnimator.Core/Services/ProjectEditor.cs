@@ -7,14 +7,14 @@ namespace FrameAnimator.Core.Services
     using Model;
 
     /// <summary>
-    /// Opérations d'édition (indépendantes de l'interface) avec gestion de l'annulation, reprenant la logique des
-    /// gestionnaires <c>acFramesOffset</c>, <c>acFrameOffset</c>, <c>acOffsetWizard</c>, souris et <c>acUndo</c> de l'original.
+    /// Editing operations (UI-independent) with undo handling, following the logic of the original's
+    /// <c>acFramesOffset</c>, <c>acFrameOffset</c>, <c>acOffsetWizard</c>, mouse and <c>acUndo</c> handlers.
     /// </summary>
     public sealed class ProjectEditor(Project project)
     {
         public Project Project { get; } = project;
 
-        /// <summary>Angles de déplacement (en degrés) par direction, utilisés par la contrainte Maj et l'assistant (0x40ef6d…).</summary>
+        /// <summary>Movement angles (in degrees) per direction, used by the Shift constraint and the wizard (0x40ef6d…).</summary>
         public static readonly Double[] DirectionAngles = [-36.9, 0.0, 36.9, 143.1, 180.0, -143.1];
 
         public static Double DirectionTangent(Int32 direction) => Math.Tan(DirectionAngles[direction] * (Math.PI / 180.0));
@@ -25,7 +25,7 @@ namespace FrameAnimator.Core.Services
 
         // ------------------------------------------------------------------ frames
 
-        /// <summary>« Frame Down / Up » (0x40c730) : déplace la frame <paramref name="index"/> de <paramref name="delta"/> et vide l'annulation.</summary>
+        /// <summary>"Frame Down / Up" (0x40c730): moves frame <paramref name="index"/> by <paramref name="delta"/> and clears the undo history.</summary>
         public void MoveFrame(Int32 direction, Int32 index, Int32 delta)
         {
             var frames = Dir(direction).Frames;
@@ -36,7 +36,7 @@ namespace FrameAnimator.Core.Services
             Project.Undo.Clear();
         }
 
-        /// <summary>« Remove Frames » : supprime les indices donnés (dans n'importe quel ordre) et vide l'annulation.</summary>
+        /// <summary>"Remove Frames": removes the given indices (in any order) and clears the undo history.</summary>
         public void RemoveFrames(Int32 direction, IEnumerable<Int32> indices)
         {
             var frames = Dir(direction).Frames;
@@ -46,9 +46,9 @@ namespace FrameAnimator.Core.Services
             Project.Undo.Clear();
         }
 
-        // ------------------------------------------------------------------ décalages (boîtes de dialogue)
+        // ------------------------------------------------------------------ offsets (dialog boxes)
 
-        /// <summary>Valeurs initiales de « Frames Offset » : <c>GetShift</c> après auto‑coupe de la frame 0.</summary>
+        /// <summary>Initial values of "Frames Offset": <c>GetShift</c> after auto-cutting frame 0.</summary>
         public (Int32 X, Int32 Y) GetFramesOffset(Int32 direction)
         {
             var dir = Dir(direction);
@@ -56,7 +56,7 @@ namespace FrameAnimator.Core.Services
             return FrameMath.GetShift(dir);
         }
 
-        /// <summary>Validation de « Frames Offset » : annulation si changement puis <c>SetShift</c>.</summary>
+        /// <summary>Validation of "Frames Offset": records an undo entry if changed, then <c>SetShift</c>.</summary>
         public void SetFramesOffset(Int32 direction, Int32 x, Int32 y)
         {
             var dir = Dir(direction);
@@ -67,8 +67,8 @@ namespace FrameAnimator.Core.Services
         }
 
         /// <summary>
-        /// Valeurs initiales de « Frame Offset » / « First Frame Offset » : relatif à la frame précédente pour
-        /// <paramref name="index"/> &gt; 0, <c>FirstFrameOffset</c> sinon.
+        /// Initial values of "Frame Offset" / "First Frame Offset": relative to the previous frame for
+        /// <paramref name="index"/> &gt; 0, <c>FirstFrameOffset</c> otherwise.
         /// </summary>
         public (Int32 X, Int32 Y) GetFrameOffset(Int32 direction, Int32 index)
         {
@@ -82,7 +82,7 @@ namespace FrameAnimator.Core.Services
             return FrameMath.Relative(prev, cur);
         }
 
-        /// <summary>Validation de « Frame Offset » / « First Frame Offset ».</summary>
+        /// <summary>Validation of "Frame Offset" / "First Frame Offset".</summary>
         public void SetFrameOffset(Int32 direction, Int32 index, Int32 x, Int32 y, Boolean inherit)
         {
             var dir = Dir(direction);
@@ -118,8 +118,8 @@ namespace FrameAnimator.Core.Services
         }
 
         /// <summary>
-        /// Assistant d'offset (0x40f754) : retourne la valeur de Y telle que le déplacement total de l'animation (de la première
-        /// à la dernière frame) suive l'axe de la direction pour l'abscisse <paramref name="x"/> (tronquée sur 16 bits).
+        /// Offset wizard (0x40f754): returns the Y value such that the total movement of the animation (from the first
+        /// to the last frame) follows the direction's axis for the abscissa <paramref name="x"/> (truncated to 16 bits).
         /// </summary>
         public Int32 OffsetWizard(Int32 direction, Int32 x)
         {
@@ -134,21 +134,21 @@ namespace FrameAnimator.Core.Services
             return Round(((Int16)x + dx) * tan - dy);
         }
 
-        // ------------------------------------------------------------------ souris (outil « Move »)
+        // ------------------------------------------------------------------ mouse ("Move" tool)
 
         private Boolean _pendingUndo;
 
-        /// <summary>Début d'un glisser (<c>MouseDown</c> avec l'outil Move) : arme l'enregistrement d'annulation.</summary>
+        /// <summary>Start of a drag (<c>MouseDown</c> with the Move tool): arms the undo recording.</summary>
         public void BeginDrag() => _pendingUndo = true;
 
-        /// <summary>Contrainte Maj : <c>y = ancreY + (x − ancreX) · tan(angle[dir])</c> arrondi (0x40ef0c).</summary>
+        /// <summary>Shift constraint: <c>y = anchorY + (x − anchorX) · tan(angle[dir])</c> rounded (0x40ef0c).</summary>
         public static Int32 ConstrainY(Int32 direction, Int32 anchorX, Int32 anchorY, Int32 x)
             => Round(anchorY + (x - anchorX) * DirectionTangent(direction));
 
         /// <summary>
-        /// Déplacement d'un cran (<c>MouseMove</c>). <paramref name="selected"/> = frame sélectionnée. Frame 0 : décalage de
-        /// direction ; frame &gt; 0 : décalage de la frame, sauf si <c>LockOffsets</c>. <paramref name="ctrl"/> propage aux
-        /// frames suivantes.
+        /// One-step move (<c>MouseMove</c>). <paramref name="selected"/> = selected frame. Frame 0: direction shift;
+        /// frame &gt; 0: frame offset, unless <c>LockOffsets</c>. <paramref name="ctrl"/> propagates to the
+        /// following frames.
         /// </summary>
         public void DragMove(Int32 direction, Int32 selected, Int32 dx, Int32 dy, Boolean ctrl)
         {
@@ -181,11 +181,11 @@ namespace FrameAnimator.Core.Services
                 Propagate(dir, selected, dx, dy);
         }
 
-        // ------------------------------------------------------------------ annulation
+        // ------------------------------------------------------------------ undo
 
         public Boolean CanUndo => !Project.Undo.IsEmpty;
 
-        /// <summary>Annule le dernier changement de décalage (0x40c5b4). Retourne la direction concernée ou −1.</summary>
+        /// <summary>Undoes the last offset change (0x40c5b4). Returns the affected direction, or −1.</summary>
         public Int32 Undo()
         {
             if (Project.Undo.IsEmpty)
