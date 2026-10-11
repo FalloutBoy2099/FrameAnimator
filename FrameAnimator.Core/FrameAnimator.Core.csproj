@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>FrameAnimator.Core</RootNamespace>
+        <Description>Cœur de Frame Animator : modèle, formats FRM/FPR/FAS, palettes, quantification, codecs BMP/PNG/GIF.</Description>
+        <AssemblyVersion>2026.10.10.4</AssemblyVersion>
+        <FileVersion>2026.10.10.4</FileVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Palette par défaut (index 0 = 0x0000FF = couleur de fond), identique à Default.act de l'original. -->
+        <EmbeddedResource Include="Default.act" LogicalName="FrameAnimator.Core.Default.act" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="FrameAnimator.Core.Tests" />
+    </ItemGroup>
+
+</Project>

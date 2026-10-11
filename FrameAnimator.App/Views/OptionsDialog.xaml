@@ -1,0 +1,58 @@
+<Window FontSize="12" x:Class="FrameAnimator.App.Views.OptionsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:FrameAnimator.App.Localization"
+        Title="{loc:T 'Options'}" SizeToContent="WidthAndHeight" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <Window.Resources>
+        <ResourceDictionary Source="/Themes/Compact.xaml" />
+    </Window.Resources>
+    <StackPanel Margin="16" MinWidth="340" Grid.IsSharedSizeScope="True">
+        <GroupBox Header="{loc:T 'Transparent Color'}" Margin="0,0,0,10" Padding="8">
+            <StackPanel>
+                <RadioButton x:Name="AutoRadio" Content="{loc:T 'Auto (pixel 0,0 of each frame)'}" GroupName="t" Margin="0,0,0,4" />
+                <RadioButton x:Name="PaletteRadio" Content="{loc:T 'From Palette (entry 0)'}" GroupName="t" Margin="0,0,0,4" />
+                <RadioButton x:Name="SampleRadio" Content="{loc:T 'Sample'}" GroupName="t" />
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="{loc:T 'Frames Tune'}" Margin="0,0,0,10" Padding="8">
+            <StackPanel>
+                <CheckBox x:Name="AutoCuttingBox" Content="{loc:T 'Autocutting'}" Margin="0,0,0,4" />
+                <CheckBox x:Name="LockBox" Content="{loc:T 'Lock Offsets'}" Margin="0,0,0,8" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{loc:T 'Ghost (+/-)'}" VerticalAlignment="Center" MinWidth="110" Margin="0,0,12,0" />
+                    <TextBox x:Name="GhostBox" Width="80" />
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="{loc:T 'Advanced'}" Margin="0,0,0,12" Padding="8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" MinWidth="130" SharedSizeGroup="Labels" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{loc:T 'Dithering Method'}" VerticalAlignment="Center" Margin="0,0,12,6" />
+                <ComboBox Grid.Column="1" x:Name="DitherBox" Margin="0,0,0,6" HorizontalAlignment="Stretch" />
+                <TextBlock Grid.Row="1" Text="{loc:T 'Action Frame'}" VerticalAlignment="Center" Margin="0,0,12,6" />
+                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="ActionBox" Margin="0,0,0,6" HorizontalAlignment="Stretch" />
+                <TextBlock Grid.Row="2" Text="{loc:T 'FPS'}" VerticalAlignment="Center" Margin="0,0,12,6" />
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="FpsBox" Margin="0,0,0,6" />
+                <CheckBox Grid.Row="3" Grid.ColumnSpan="2" x:Name="LegacyBox" Content="{loc:T 'Original color matching (byte-identical FRM output)'}"
+                          ToolTip="{loc:T 'The original program has a bug in its nearest-color search; keep this on to get identical files.'}" />
+            </Grid>
+        </GroupBox>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="{loc:T 'OK'}" Width="80" IsDefault="True" Margin="0,0,8,0" Click="OnOk" />
+            <Button Content="{loc:T 'Cancel'}" Width="80" IsCancel="True" />
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -1,0 +1,23 @@
+<Window FontSize="12" x:Class="FrameAnimator.App.Views.AboutDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:FrameAnimator.App.Localization"
+        Title="{loc:T 'About'}" SizeToContent="WidthAndHeight" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+	<Window.Resources>
+		<ResourceDictionary Source="/Themes/Compact.xaml" />
+	</Window.Resources>
+	<StackPanel Margin="24" MaxWidth="400">
+		<StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+			<Image Source="pack://application:,,,/Assets/app.ico" Width="48" Height="48" Margin="0,0,16,0" />
+			<StackPanel VerticalAlignment="Center">
+				<TextBlock Text="Frame Animator 2.8" FontSize="18" FontWeight="SemiBold" />
+				<TextBlock Text="by Kain" Margin="0,4,0,0" />
+				<TextBlock x:Name="VersionText" Opacity="0.7" />
+			</StackPanel>
+		</StackPanel>
+		<TextBlock Text="{loc:T 'Rewrite in .NET 10 / WPF of Frame Animator 2.70.1 by Jochua'}" TextWrapping="Wrap"
+                   Opacity="0.7" Margin="0,0,0,16" />
+		<Button Content="{loc:T 'OK'}" Width="80" HorizontalAlignment="Right" IsDefault="True" IsCancel="True" />
+	</StackPanel>
+</Window>
