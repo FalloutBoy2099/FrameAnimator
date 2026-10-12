@@ -73,6 +73,9 @@ dotnet run --project FrameAnimator.App -- /?                            # consol
 .\Publish.ps1                                                           # publish\FrameAnimator.exe and FrameAnimator-NET.exe
 ```
 
+XAML files are formatted with [XamlStyler](https://github.com/Xavalon/XamlStyler) using the settings in `Settings.XamlStyler`
+(`xstyler -f <file.xaml> -c Settings.XamlStyler`; the Visual Studio extension picks the same file up).
+
 `Publish.ps1` builds two single-file executables: `FrameAnimator.exe` (about 0.5 MB, framework-dependent) and `FrameAnimator-NET.exe`
 (about 59 MB, .NET runtime included). Options: `-Configuration Release|Debug`, `-Runtime win-x64|win-x86|win-arm64`. The previous
 `publish` folder is replaced only when both builds succeed.
