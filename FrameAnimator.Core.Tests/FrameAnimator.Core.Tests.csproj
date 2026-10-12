@@ -5,8 +5,8 @@
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
-        <AssemblyVersion>2026.10.11.7</AssemblyVersion>
-        <FileVersion>2026.10.11.7</FileVersion>
+        <AssemblyVersion>2026.10.12.8</AssemblyVersion>
+        <FileVersion>2026.10.12.8</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
