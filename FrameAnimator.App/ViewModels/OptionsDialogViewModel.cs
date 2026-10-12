@@ -16,7 +16,7 @@ namespace FrameAnimator.App.ViewModels
         private readonly Int32 _frameCount;
         private readonly IMessageService _messages;
 
-        public OptionsDialogViewModel(ProjectSettings settings, Int32 frameCount, IMessageService messages)
+        public OptionsDialogViewModel(ProjectSettings settings, Int32 frameCount, IMessageService messages, ILocalizer localizer)
         {
             _settings = settings;
             _frameCount = frameCount;
@@ -29,7 +29,7 @@ namespace FrameAnimator.App.ViewModels
             GhostText = settings.GhostIncrement.ToString(CultureInfo.InvariantCulture);
             FpsText = settings.Fps.ToString(CultureInfo.InvariantCulture);
 
-            DitherMethods = [Localizer.T("Default"), Localizer.T("Advanced"), "Fallout"];
+            DitherMethods = [localizer.T("Default"), localizer.T("Advanced"), "Fallout"];
             DitherIndex = (Int32)settings.DitherMethod;
 
             // "0..n-1" (n = number of frames of direction 0); a single empty item if n <= 0

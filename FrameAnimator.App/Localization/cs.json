@@ -142,5 +142,20 @@
   "Palette": "Paleta",
   "Fallout Palette": "Paleta Fallout",
   "Action Script": "Skript akcí",
-  "Background": "Pozadí"
+  "Background": "Pozadí",
+  "Relative pa_ths": "Relativní ce_sty",
+  "Write the paths of the project file relative to its folder": "Zapsat cesty v souboru projektu relativně k jeho složce",
+  "Animation pre_view": "Náhled a_nimace",
+  "Animation preview": "Náhled animace",
+  "Previous frame": "Předchozí snímek",
+  "Next frame": "Další snímek",
+  "Play": "Přehrát",
+  "Pause": "Pozastavit",
+  "No frames": "Žádné snímky",
+  "Frame {0}/{1} - {2} fps": "Snímek {0}/{1} - {2} fps",
+  "Save changes to '{0}'?": "Uložit změny v '{0}'?",
+  "Recent _projects": "Nedávné _projekty",
+  "Clear list": "Vymazat seznam",
+  "Drag the frame, or use the arrow keys (Shift: 10 pixels, Ctrl: following frames too)": "Přetáhněte snímek nebo použijte šipky (Shift: 10 pixelů, Ctrl: i následující snímky)",
+  "Click a pixel to use its color as the sample": "Kliknutím na pixel použijete jeho barvu jako vzorek"
 }

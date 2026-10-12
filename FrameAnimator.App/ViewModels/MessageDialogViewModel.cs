@@ -12,8 +12,11 @@ namespace FrameAnimator.App.ViewModels
     /// <summary>View model of the message box using the application's theme.</summary>
     public sealed partial class MessageDialogViewModel : DialogViewModelBase
     {
-        public MessageDialogViewModel(String message, String caption, MessageBoxButton buttons, MessageBoxImage image)
+        private readonly ILocalizer _localizer;
+
+        public MessageDialogViewModel(ILocalizer localizer, String message, String caption, MessageBoxButton buttons, MessageBoxImage image)
         {
+            _localizer = localizer;
             Message = message;
             Caption = caption;
             Glyph = GetGlyph(image);
@@ -24,6 +27,12 @@ namespace FrameAnimator.App.ViewModels
                 [
                     CreateButton(MessageBoxResult.Yes, isDefault: true, isCancel: false),
                     CreateButton(MessageBoxResult.No, isDefault: false, isCancel: true),
+                ],
+                MessageBoxButton.YesNoCancel =>
+                [
+                    CreateButton(MessageBoxResult.Yes, isDefault: true, isCancel: false),
+                    CreateButton(MessageBoxResult.No, isDefault: false, isCancel: false),
+                    CreateButton(MessageBoxResult.Cancel, isDefault: false, isCancel: true),
                 ],
                 _ =>
                 [
@@ -56,10 +65,10 @@ namespace FrameAnimator.App.ViewModels
             _ => String.Empty,
         };
 
-        private static MessageButton CreateButton(MessageBoxResult result, Boolean isDefault, Boolean isCancel)
+        private MessageButton CreateButton(MessageBoxResult result, Boolean isDefault, Boolean isCancel)
             => new(GetCaption(result), result, isDefault, isCancel);
 
-        private static String GetCaption(MessageBoxResult result) => Localizer.T(result switch
+        private String GetCaption(MessageBoxResult result) => _localizer.T(result switch
         {
             MessageBoxResult.Yes => "Yes",
             MessageBoxResult.No => "No",

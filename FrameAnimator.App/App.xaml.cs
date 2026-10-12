@@ -3,8 +3,11 @@ namespace FrameAnimator.App
     using System;
     using System.Windows;
     using System.Windows.Threading;
+    using CommunityToolkit.Mvvm.DependencyInjection;
+    using FrameAnimator.App.Services;
     using Infrastructure;
     using Localization;
+    using Microsoft.Extensions.DependencyInjection;
     using ViewModels;
     using Views;
 
@@ -18,13 +21,15 @@ namespace FrameAnimator.App
             {
                 if (Environment.GetEnvironmentVariable("FRAMEANIMATOR_LOG") is { Length: > 0 } log)
                     System.IO.File.AppendAllText(log, args.Exception + Environment.NewLine);
-                MessageDialog.Show(MainWindow, args.Exception.Message, "Frame Animator", MessageBoxButton.OK, MessageBoxImage.Error);
+                Ioc.Default.GetRequiredService<MessageService>().ShowError(args.Exception.Message);
                 args.Handled = true;
             };
 
-            ThemeManager.Initialize();
-            TitleBarTheme.ApplyToAllWindows();
-            Localizer.Instance.Initialize();
+            ThemeService theme = Ioc.Default.GetRequiredService<ThemeService>();
+            Localizer localizer = Ioc.Default.GetRequiredService<Localizer>();
+            theme.Initialize();
+            Ioc.Default.GetRequiredService<WindowService>().Initialize();
+            localizer.Initialize();
 
             String? snapshot = null;
             String? open = null;
@@ -37,19 +42,20 @@ namespace FrameAnimator.App
                 else if (e.Args[i] == "--dialog" && i + 1 < e.Args.Length)
                     dialog = e.Args[++i];
                 else if (e.Args[i] == "--theme" && i + 1 < e.Args.Length)
-                    ThemeManager.Preview(ThemeManager.Parse(e.Args[++i]));
+                    theme.Preview(ThemeService.Parse(e.Args[++i]));
                 else if (e.Args[i] == "--system-dialogs")
-                    DialogPreferences.Preview(true);
+                    Ioc.Default.GetRequiredService<DialogPreferences>().Preview(true);
                 else if (e.Args[i] == "--lang" && i + 1 < e.Args.Length)
-                    Localizer.Instance.Apply(e.Args[++i]);
+                    localizer.Apply(e.Args[++i]);
                 else if (open is null)
                     open = e.Args[i];
             }
 
-            DialogService dialogs = new();
+            DialogHost host = Ioc.Default.GetRequiredService<DialogHost>();
             MainWindow window = new();
-            MainViewModel vm = new(Dispatcher, dialogs, AppContext.BaseDirectory);
-            dialogs.Owner = window;
+            MainViewModel vm = Ioc.Default.GetRequiredService<MainViewModel>();
+            host.Owner = window;
+            Ioc.Default.GetRequiredService<IWindowService>().Attach(window);
             window.DataContext = vm;
             MainWindow = window;
             window.Show();
@@ -83,16 +89,21 @@ namespace FrameAnimator.App
 
         private static Window? CreateDialog(String name, MainViewModel vm)
         {
+            IMessageService messages = Ioc.Default.GetRequiredService<IMessageService>();
+            ILocalizer localizer = Ioc.Default.GetRequiredService<ILocalizer>();
             switch (name)
             {
                 case "options":
-                    return Bind(new OptionsDialog(), new OptionsDialogViewModel(vm.Project.Settings, 3, new MessageService()));
+                    return Bind(new OptionsDialog(), new OptionsDialogViewModel(vm.Project.Settings, 3, messages, localizer));
                 case "automate":
-                    return Bind(new AutomateDialog(), new AutomateDialogViewModel("Default.act", new DialogService()));
+                    return Bind(new AutomateDialog(), new AutomateDialogViewModel("Default.act", Ioc.Default.GetRequiredService<DialogService>()));
+                case "preview":
+                    return Bind(new AnimationPreviewWindow(), Ioc.Default.GetRequiredService<AnimationPreviewViewModel>());
                 case "about":
                     return Bind(new AboutDialog(), new AboutDialogViewModel());
                 case "open":
-                    return FileDialogWindow.CreateForPreview();
+                    return Bind(new FileDialogWindow(), Ioc.Default.GetRequiredService<FileDialogs>().CreateViewModel(FileDialogOptions.ForOpen("Open Project",
+                        Ioc.Default.GetRequiredService<DialogService>().TranslateFilter("All (*.FPR,*.FRM)|*.FPR;*.FRM|Project (*.FPR)|*.FPR"), multiselect: true)));
                 case "color":
                     return Bind(new ColorDialogWindow(), new ColorDialogViewModel(0x80C040));
                 case "offset":
@@ -105,14 +116,15 @@ namespace FrameAnimator.App
                         ShowWizard = true,
                         WizardEnabled = true,
                         Wizard = x => x,
-                    }, new MessageService()));
+                    }, messages, localizer));
                 default:
                     return null;
             }
         }
 
-        private static Window Bind(Window window, DialogViewModelBase viewModel)
+        private static Window Bind(Window window, Object viewModel)
         {
+            Ioc.Default.GetRequiredService<IWindowService>().Attach(window);
             window.DataContext = viewModel;
             return window;
         }

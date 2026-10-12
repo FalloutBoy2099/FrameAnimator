@@ -10,7 +10,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void StartsWithTheInitialText()
         {
-            TextPromptDialogViewModel viewModel = new("New folder", "Folder name:", "Frames");
+            TextPromptDialogViewModel viewModel = new(TestServices.Localizer(), "New folder", "Folder name:", "Frames");
 
             Assert.Equal("New folder", viewModel.Title);
             Assert.Equal("Folder name:", viewModel.Prompt);
@@ -21,7 +21,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void OkReturnsTheTrimmedTextAndRequestsClose()
         {
-            TextPromptDialogViewModel viewModel = new("t", "p", "");
+            TextPromptDialogViewModel viewModel = new(TestServices.Localizer(), "t", "p", "");
             List<Boolean> closed = [];
             viewModel.CloseRequested += (_, accepted) => closed.Add(accepted);
 
@@ -37,7 +37,7 @@ namespace FrameAnimator.App.Tests
         [InlineData("   ")]
         public void OkWithAnEmptyTextDoesNothing(String text)
         {
-            TextPromptDialogViewModel viewModel = new("t", "p", text);
+            TextPromptDialogViewModel viewModel = new(TestServices.Localizer(), "t", "p", text);
             Boolean closed = false;
             viewModel.CloseRequested += (_, _) => closed = true;
 

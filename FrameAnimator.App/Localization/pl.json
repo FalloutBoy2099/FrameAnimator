@@ -141,5 +141,20 @@
   "Palette": "Paleta",
   "Fallout Palette": "Paleta Fallout",
   "Action Script": "Skrypt akcji",
-  "Background": "Tło"
+  "Background": "Tło",
+  "Relative pa_ths": "Ścieżki względn_e",
+  "Write the paths of the project file relative to its folder": "Zapisuj ścieżki w pliku projektu względem jego folderu",
+  "Animation pre_view": "Podgląd a_nimacji",
+  "Animation preview": "Podgląd animacji",
+  "Previous frame": "Poprzednia klatka",
+  "Next frame": "Następna klatka",
+  "Play": "Odtwarzaj",
+  "Pause": "Wstrzymaj",
+  "No frames": "Brak klatek",
+  "Frame {0}/{1} - {2} fps": "Klatka {0}/{1} - {2} fps",
+  "Save changes to '{0}'?": "Zapisać zmiany w '{0}'?",
+  "Recent _projects": "Ostatnie _projekty",
+  "Clear list": "Wyczyść listę",
+  "Drag the frame, or use the arrow keys (Shift: 10 pixels, Ctrl: following frames too)": "Przeciągnij klatkę lub użyj strzałek (Shift: 10 pikseli, Ctrl: także kolejne klatki)",
+  "Click a pixel to use its color as the sample": "Kliknij piksel, aby użyć jego koloru jako próbki"
 }

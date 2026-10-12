@@ -141,5 +141,20 @@
   "Palette": "Palett",
   "Fallout Palette": "Fallout-palett",
   "Action Script": "Åtgärdsskript",
-  "Background": "Bakgrund"
+  "Background": "Bakgrund",
+  "Relative pa_ths": "Relativa _sökvägar",
+  "Write the paths of the project file relative to its folder": "Skriv sökvägarna i projektfilen relativt dess mapp",
+  "Animation pre_view": "Förhandsgranska _animation",
+  "Animation preview": "Förhandsgranskning av animation",
+  "Previous frame": "Föregående bild",
+  "Next frame": "Nästa bild",
+  "Play": "Spela upp",
+  "Pause": "Paus",
+  "No frames": "Inga bilder",
+  "Frame {0}/{1} - {2} fps": "Bild {0}/{1} - {2} fps",
+  "Save changes to '{0}'?": "Spara ändringarna i '{0}'?",
+  "Recent _projects": "Senaste _projekt",
+  "Clear list": "Rensa listan",
+  "Drag the frame, or use the arrow keys (Shift: 10 pixels, Ctrl: following frames too)": "Dra bilden eller använd piltangenterna (Skift: 10 pixlar, Ctrl: även följande bilder)",
+  "Click a pixel to use its color as the sample": "Klicka på en pixel för att använda dess färg som prov"
 }

@@ -11,6 +11,7 @@ namespace FrameAnimator.App.ViewModels
     using CommunityToolkit.Mvvm.Input;
     using Infrastructure;
     using Localization;
+    using Services;
 
     /// <summary>Parameters of the application's file dialog (open or save).</summary>
     public sealed record FileDialogOptions
@@ -82,30 +83,37 @@ namespace FrameAnimator.App.ViewModels
         private readonly FileDialogOptions _options;
         private readonly IMessageService _messages;
         private readonly Func<String, String, String, String?> _promptForText;
+        private readonly ILocalizer _localizer;
+        private readonly IFileDialogMemory _memory;
         private readonly Stack<String> _history = new();
         private IReadOnlyList<FileEntry> _selected = [];
 
         /// <param name="options">What kind of dialog to show.</param>
         /// <param name="messages">Warnings and questions.</param>
         /// <param name="promptForText">Asks for a line of text (title, prompt, initial text); <c>null</c> if canceled.</param>
-        public FileDialogViewModel(FileDialogOptions options, IMessageService messages, Func<String, String, String, String?> promptForText)
+        /// <param name="localizer">Translates the texts of the dialog.</param>
+        /// <param name="memory">Last folders and favorites.</param>
+        public FileDialogViewModel(FileDialogOptions options, IMessageService messages, Func<String, String, String, String?> promptForText,
+            ILocalizer localizer, IFileDialogMemory memory)
         {
             _options = options;
             _messages = messages;
             _promptForText = promptForText;
-            Title = Localizer.T(options.Title);
-            OkText = Localizer.T(options.Save ? "Save" : "Open");
+            _localizer = localizer;
+            _memory = memory;
+            Title = _localizer.T(options.Title);
+            OkText = _localizer.T(options.Save ? "Save" : "Open");
 
             List<FilterEntry> filters = ParseFilter(options.Filter).ToList();
             if (filters.Count == 0)
-                filters.Add(new FilterEntry(Localizer.T("All") + " (*.*)", ["*.*"]));
+                filters.Add(new FilterEntry(_localizer.T("All") + " (*.*)", ["*.*"]));
             Filters = filters;
             SelectedFilter = filters[Math.Clamp(options.FilterIndex - 1, 0, filters.Count - 1)];
 
             Places = BuildPlaces().ToList();
             RefreshFavorites();
 
-            String start = FileDialogMemory.GetLastDirectory(options.Save) ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            String start = _memory.GetLastDirectory(options.Save) ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             String name = "";
             if (!String.IsNullOrEmpty(options.FileName))
             {
@@ -218,7 +226,7 @@ namespace FrameAnimator.App.ViewModels
                 yield return new FilterEntry(parts[i], parts[i + 1].Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         }
 
-        private static IEnumerable<PlaceEntry> BuildPlaces()
+        private IEnumerable<PlaceEntry> BuildPlaces()
         {
             (String Label, Environment.SpecialFolder Folder)[] known =
             [
@@ -230,11 +238,11 @@ namespace FrameAnimator.App.ViewModels
             {
                 String path = Environment.GetFolderPath(folder);
                 if (path.Length > 0 && Directory.Exists(path))
-                    yield return new PlaceEntry(Localizer.T(label), path);
+                    yield return new PlaceEntry(_localizer.T(label), path);
             }
             String downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             if (Directory.Exists(downloads))
-                yield return new PlaceEntry(Localizer.T("Downloads"), downloads);
+                yield return new PlaceEntry(_localizer.T("Downloads"), downloads);
             foreach (DriveInfo drive in DriveInfo.GetDrives())
             {
                 Boolean ready;
@@ -368,7 +376,7 @@ namespace FrameAnimator.App.ViewModels
             if (Directory.Exists(favorite.Path))
                 NavigateTo(favorite.Path);
             else
-                _messages.ShowWarning(Localizer.F("'{0}' was not found.", favorite.Path));
+                _messages.ShowWarning(_localizer.F("'{0}' was not found.", favorite.Path));
         }
 
         /// <summary>Double click on the (first) selected row: enters a folder, accepts a file.</summary>
@@ -395,7 +403,7 @@ namespace FrameAnimator.App.ViewModels
         private void RefreshFavorites()
         {
             Favorites.Clear();
-            foreach (String favorite in FileDialogMemory.GetFavorites())
+            foreach (String favorite in _memory.GetFavorites())
                 Favorites.Add(new PlaceEntry(FavoriteLabel(favorite), favorite));
             ShowFavoritesHint = Favorites.Count == 0;
             UpdateFavoriteState();
@@ -406,21 +414,21 @@ namespace FrameAnimator.App.ViewModels
         {
             if (CurrentDirectory.Length == 0)
                 return;
-            Boolean favorite = FileDialogMemory.IsFavorite(CurrentDirectory);
+            Boolean favorite = _memory.IsFavorite(CurrentDirectory);
             FavoriteGlyph = favorite ? "" : "";
-            FavoriteToolTip = Localizer.T(favorite ? "Remove from favorites" : "Add to favorites");
+            FavoriteToolTip = _localizer.T(favorite ? "Remove from favorites" : "Add to favorites");
             // "Add to favorites" only applies to a folder; with no targeted folder, it applies to the current folder
-            FileMenuFavoriteHeader = Localizer.T(FileDialogMemory.IsFavorite(SelectedFolder?.FullPath ?? CurrentDirectory)
+            FileMenuFavoriteHeader = _localizer.T(_memory.IsFavorite(SelectedFolder?.FullPath ?? CurrentDirectory)
                 ? "Remove from favorites"
                 : "Add to favorites");
         }
 
         private void ToggleFavoriteOf(String path)
         {
-            if (FileDialogMemory.IsFavorite(path))
-                FileDialogMemory.RemoveFavorite(path);
+            if (_memory.IsFavorite(path))
+                _memory.RemoveFavorite(path);
             else
-                FileDialogMemory.AddFavorite(path);
+                _memory.AddFavorite(path);
             RefreshFavorites();
         }
 
@@ -438,7 +446,7 @@ namespace FrameAnimator.App.ViewModels
         {
             if (ContextFavorite is { } favorite)
             {
-                FileDialogMemory.RemoveFavorite(favorite.Path);
+                _memory.RemoveFavorite(favorite.Path);
                 ContextFavorite = null;
                 RefreshFavorites();
             }
@@ -449,7 +457,7 @@ namespace FrameAnimator.App.ViewModels
         [RelayCommand]
         private void NewFolder()
         {
-            String? name = _promptForText("New folder", "Folder name:", Localizer.T("New folder"));
+            String? name = _promptForText("New folder", "Folder name:", _localizer.T("New folder"));
             if (name is null)
                 return;
             try
@@ -512,7 +520,7 @@ namespace FrameAnimator.App.ViewModels
                 if (_options.DefaultExt.Length > 0 && Path.GetExtension(path).Length == 0)
                     path += "." + _options.DefaultExt.TrimStart('.');
                 if (_options.OverwritePrompt && File.Exists(path)
-                    && !_messages.AskYesNo(Localizer.F("'{0}' already exists.\nDo you want to replace it?", Path.GetFileName(path))))
+                    && !_messages.AskYesNo(_localizer.F("'{0}' already exists.\nDo you want to replace it?", Path.GetFileName(path))))
                 {
                     return;
                 }
@@ -526,7 +534,7 @@ namespace FrameAnimator.App.ViewModels
             String? missing = _options.MustExist ? paths.FirstOrDefault(path => !File.Exists(path)) : null;
             if (missing is not null)
             {
-                _messages.ShowWarning(Localizer.F("'{0}' was not found.", Path.GetFileName(missing)));
+                _messages.ShowWarning(_localizer.F("'{0}' was not found.", Path.GetFileName(missing)));
                 return;
             }
             Accept(paths);
@@ -536,7 +544,7 @@ namespace FrameAnimator.App.ViewModels
         {
             Result = paths.ToArray();
             if (Path.GetDirectoryName(Result[0]) is { Length: > 0 } directory && Directory.Exists(directory))
-                FileDialogMemory.SetLastDirectory(_options.Save, directory);
+                _memory.SetLastDirectory(_options.Save, directory);
             RequestClose(true);
         }
     }

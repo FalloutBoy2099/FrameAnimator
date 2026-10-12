@@ -1,8 +1,11 @@
 namespace FrameAnimator.Core.Model
 {
     using System;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
 
     /// <summary>
     /// Complete state of a Frame Animator project: 6 directions, palette, settings, associated files, undo stack.
@@ -54,6 +57,26 @@ namespace FrameAnimator.Core.Model
             Background = null;
             FrmFile = "";
             CurrentDirection = 0;
+        }
+
+        /// <summary>
+        /// A fingerprint of what a project file stores: the persisted options, the offsets and files of every frame, the palette, the
+        /// background and the FRM. Two states with the same fingerprint would write the same project file; it is how "has the project
+        /// changed since it was loaded or saved" is answered, whatever way it was edited (dialog, mouse, script).
+        /// </summary>
+        public String ContentSignature()
+        {
+            StringBuilder text = new();
+            ProjectSettings s = Settings;
+            text.Append(CultureInfo.InvariantCulture, $"{(Int32)s.TransparentMode},{s.AutoCutting},{(Int32)s.DitherMethod},{s.Fps},{s.ActionFrame},{s.SampleColor}").Append('\n');
+            text.Append(PaletteFile).Append('\n').Append(BackgroundFile).Append('\n').Append(FrmFile).Append('\n');
+            foreach (Direction dir in Directions)
+            {
+                text.Append(CultureInfo.InvariantCulture, $"D{dir.ShiftBaseX},{dir.ShiftBaseY},{dir.FirstFrameOffsetX},{dir.FirstFrameOffsetY}").Append('\n');
+                foreach (Frame frame in dir.Frames)
+                    text.Append(CultureInfo.InvariantCulture, $"F{frame.OffsetX},{frame.OffsetY},{frame.SourceIndex},{frame.FileName}").Append('\n');
+            }
+            return Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())));
         }
 
         /// <summary>Window title: project name or "Untitled.fpr".</summary>

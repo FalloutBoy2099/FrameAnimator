@@ -5,6 +5,7 @@ namespace FrameAnimator.App.Infrastructure
     using System.IO;
     using System.Text;
     using System.Windows;
+    using FrameAnimator.App.Services;
     using FrameAnimator.Core.Cli;
 
     /// <summary>
@@ -126,7 +127,7 @@ namespace FrameAnimator.App.Infrastructure
 
         /// <summary>Help language: the one chosen in the application, otherwise the Windows one.</summary>
         private static String GetLanguage()
-            => UserSettings.Get("language") ?? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+            => new FileSettingsStore().Get("language") ?? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
         private static String GetProgramName()
             => Path.GetFileNameWithoutExtension(Environment.ProcessPath) ?? "FrameAnimator";

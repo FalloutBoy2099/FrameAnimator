@@ -3,13 +3,21 @@ namespace FrameAnimator.Core.Model
     using System;
     using System.IO;
     using System.Reflection;
+    using FrameAnimator.Core.Services;
 
-    public sealed class PaletteLoadException(String message, Exception? inner = null) : Exception(message, inner);
+    public sealed class PaletteLoadException(UserMessage detail, Exception? inner = null) : Exception(detail.ToString(), inner)
+    {
+        /// <summary>The message to show to the user (translatable).</summary>
+        public UserMessage Detail { get; } = detail;
+    }
 
     /// <summary>Unknown palette extension (the original displays<c>Unknown palette type '*.EXT'!</c>).</summary>
-    public sealed class UnknownPaletteTypeException(String extension) : Exception($"Unknown palette type '*{extension}'!")
+    public sealed class UnknownPaletteTypeException(String extension) : Exception(new UserMessage(CoreMessages.UnknownPaletteType, extension).ToString())
     {
         public String Extension { get; } = extension;
+
+        /// <summary>The message to show to the user (translatable).</summary>
+        public UserMessage Detail { get; } = new(CoreMessages.UnknownPaletteType, extension);
     }
 
     /// <summary>
@@ -62,7 +70,7 @@ namespace FrameAnimator.Core.Model
             catch (UnknownPaletteTypeException) { throw; }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                throw new PaletteLoadException($"Unable to load palette '{Path.GetFileName(path)}'!", e);
+                throw new PaletteLoadException(new UserMessage(CoreMessages.UnableToLoadPalette, Path.GetFileName(path)), e);
             }
         }
 

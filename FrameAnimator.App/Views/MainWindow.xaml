@@ -10,6 +10,9 @@
 	Height="576"
 	MinWidth="520"
 	MinHeight="320"
+	AllowDrop="True"
+	DragOver="OnFileDragOver"
+	Drop="OnFileDrop"
 	FontSize="12"
 	Icon="pack://application:,,,/Assets/app.ico"
 	StateChanged="OnStateChanged"
@@ -84,41 +87,45 @@
 			Modifiers="Ctrl" />
 		<KeyBinding
 			Key="D"
-			Command="{Binding FramesOffsetCommand, Mode=OneTime}"
+			Command="{Binding FrameList.FramesOffsetCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
 		<KeyBinding
 			Key="A"
-			Command="{Binding AddFramesCommand, Mode=OneTime}"
+			Command="{Binding FrameList.AddFramesCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
 		<KeyBinding
 			Key="F"
-			Command="{Binding FrameOffsetCommand, Mode=OneTime}"
+			Command="{Binding FrameList.FrameOffsetCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
 		<KeyBinding
 			Key="B"
-			Command="{Binding ToggleBackgroundCommand, Mode=OneTime}"
+			Command="{Binding Canvas.ToggleBackgroundCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
 		<KeyBinding
 			Key="H"
-			Command="{Binding ToggleHexesCommand, Mode=OneTime}"
+			Command="{Binding Canvas.ToggleHexesCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
 		<KeyBinding
 			Key="G"
-			Command="{Binding ToggleGhostCommand, Mode=OneTime}"
+			Command="{Binding Canvas.ToggleGhostCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
-		<KeyBinding Key="Delete" Command="{Binding RemoveFramesCommand, Mode=OneTime}" />
+		<KeyBinding
+			Key="P"
+			Command="{Binding TogglePreviewCommand, Mode=OneTime}"
+			Modifiers="Ctrl" />
+		<KeyBinding Key="Delete" Command="{Binding FrameList.RemoveFramesCommand, Mode=OneTime}" />
 		<KeyBinding Key="Escape" Command="{Binding CancelCommand, Mode=OneTime}" />
 		<KeyBinding
 			Key="OemPlus"
-			Command="{Binding ZoomInCommand, Mode=OneTime}"
+			Command="{Binding Canvas.ZoomInCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
 		<KeyBinding
 			Key="OemMinus"
-			Command="{Binding ZoomOutCommand, Mode=OneTime}"
+			Command="{Binding Canvas.ZoomOutCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
 		<KeyBinding
 			Key="D0"
-			Command="{Binding ZoomResetCommand, Mode=OneTime}"
+			Command="{Binding Canvas.ZoomResetCommand, Mode=OneTime}"
 			Modifiers="Ctrl" />
 	</Window.InputBindings>
 
@@ -166,6 +173,24 @@
 						Command="{Binding OpenCommand}"
 						Header="{loc:T '_Open Project...'}"
 						InputGestureText="Ctrl+O" />
+					<MenuItem
+						DisplayMemberPath="Header"
+						Header="{loc:T 'Recent _projects'}"
+						IsEnabled="{Binding AnyRecentFiles, Mode=OneWay}"
+						ItemsSource="{Binding RecentFiles}">
+						<MenuItem.ItemContainerStyle>
+							<Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+								<Setter Property="Command" Value="{Binding Command}" />
+								<Setter Property="CommandParameter" Value="{Binding Path}" />
+								<Setter Property="ToolTip" Value="{Binding Path}" />
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding IsClear}" Value="True">
+										<Setter Property="ToolTip" Value="{x:Null}" />
+									</DataTrigger>
+								</Style.Triggers>
+							</Style>
+						</MenuItem.ItemContainerStyle>
+					</MenuItem>
 					<MenuItem Command="{Binding ExecuteScriptCommand}" Header="{loc:T 'Execute _Script...'}" />
 					<Separator />
 					<MenuItem
@@ -174,6 +199,11 @@
 						InputGestureText="Ctrl+S" />
 					<MenuItem Command="{Binding SaveAsCommand}" Header="{loc:T 'Save Project _As...'}" />
 					<MenuItem Command="{Binding CreateFrmCommand}" Header="{loc:T 'Create _FRM...'}" />
+					<MenuItem
+						Header="{loc:T 'Relative pa_ths'}"
+						IsCheckable="True"
+						IsChecked="{Binding SaveRelativePaths, Mode=TwoWay}"
+						ToolTip="{loc:T 'Write the paths of the project file relative to its folder'}" />
 					<Separator />
 					<MenuItem
 						Command="{Binding AutomateCommand}"
@@ -192,19 +222,19 @@
 						InputGestureText="Ctrl+Z" />
 					<Separator />
 					<MenuItem
-						Command="{Binding FramesOffsetCommand}"
+						Command="{Binding FrameList.FramesOffsetCommand}"
 						Header="{loc:T 'Frames _Offset...'}"
 						InputGestureText="Ctrl+D" />
 					<MenuItem
-						Command="{Binding AddFramesCommand}"
+						Command="{Binding FrameList.AddFramesCommand}"
 						Header="{loc:T '_Add Frames...'}"
 						InputGestureText="Ctrl+A" />
 					<MenuItem
-						Command="{Binding FrameOffsetCommand}"
+						Command="{Binding FrameList.FrameOffsetCommand}"
 						Header="{loc:T '_Frame Offset...'}"
 						InputGestureText="Ctrl+F" />
 					<MenuItem
-						Command="{Binding RemoveFramesCommand}"
+						Command="{Binding FrameList.RemoveFramesCommand}"
 						Header="{loc:T '_Remove Frames'}"
 						InputGestureText="Del" />
 					<Separator />
@@ -215,50 +245,54 @@
 					<MenuItem
 						Header="{loc:T 'F_ull Names'}"
 						IsCheckable="True"
-						IsChecked="{Binding ShowFullNames, Mode=TwoWay}" />
+						IsChecked="{Binding FrameList.ShowFullNames, Mode=TwoWay}" />
 					<MenuItem
 						Header="{loc:T '_Background'}"
 						InputGestureText="Ctrl+B"
 						IsCheckable="True"
-						IsChecked="{Binding ShowBackground, Mode=TwoWay}" />
+						IsChecked="{Binding Canvas.ShowBackground, Mode=TwoWay}" />
 					<MenuItem
 						Header="{loc:T '_Hexes'}"
 						InputGestureText="Ctrl+H"
 						IsCheckable="True"
-						IsChecked="{Binding ShowHexes, Mode=TwoWay}" />
+						IsChecked="{Binding Canvas.ShowHexes, Mode=TwoWay}" />
 					<MenuItem
 						Header="{loc:T '_Ghost'}"
 						InputGestureText="Ctrl+G"
 						IsCheckable="True"
-						IsChecked="{Binding ShowGhost, Mode=TwoWay}" />
+						IsChecked="{Binding Canvas.ShowGhost, Mode=TwoWay}" />
 					<Separator />
+					<MenuItem
+						Command="{Binding TogglePreviewCommand}"
+						Header="{loc:T 'Animation pre_view'}"
+						InputGestureText="Ctrl+P" />
 					<MenuItem Command="{Binding LoadBackgroundCommand}" Header="{loc:T 'Load Back_ground...'}" />
 					<Separator />
 					<MenuItem
-						Command="{Binding ZoomInCommand}"
+						Command="{Binding Canvas.ZoomInCommand}"
 						Header="{loc:T 'Zoom _In'}"
 						InputGestureText="Ctrl++" />
 					<MenuItem
-						Command="{Binding ZoomOutCommand}"
+						Command="{Binding Canvas.ZoomOutCommand}"
 						Header="{loc:T 'Zoom _Out'}"
 						InputGestureText="Ctrl+-" />
 					<MenuItem
-						Command="{Binding ZoomResetCommand}"
+						Command="{Binding Canvas.ZoomResetCommand}"
 						Header="{loc:T '_Reset Zoom'}"
 						InputGestureText="Ctrl+0" />
 					<Separator />
 					<MenuItem
 						Header="{loc:T '_System dialogs'}"
 						IsCheckable="True"
-						IsChecked="{Binding UseSystemDialogs, Mode=TwoWay}" />
+						IsChecked="{Binding Appearance.UseSystemDialogs, Mode=TwoWay}" />
 					<MenuItem
 						Header="{loc:T 'Save _position'}"
 						IsCheckable="True"
-						IsChecked="{Binding SaveWindowPosition, Mode=TwoWay}" />
+						IsChecked="{Binding Appearance.SaveWindowPosition, Mode=TwoWay}" />
 					<MenuItem
 						Header="{loc:T 'Save si_ze'}"
 						IsCheckable="True"
-						IsChecked="{Binding SaveWindowSize, Mode=TwoWay}" />
+						IsChecked="{Binding Appearance.SaveWindowSize, Mode=TwoWay}" />
 				</MenuItem>
 				<MenuItem Header="{loc:T '_Help'}">
 					<MenuItem Command="{Binding AboutCommand}" Header="{loc:T '_About...'}" />
@@ -288,7 +322,7 @@
 							FontFamily="{DynamicResource {x:Static SystemFonts.MessageFontFamilyKey}}"
 							FontSize="12"
 							ItemContainerStyle="{StaticResource ChoiceMenuItemStyle}"
-							ItemsSource="{Binding ThemeChoices, Mode=OneTime}"
+							ItemsSource="{Binding Appearance.ThemeChoices, Mode=OneTime}"
 							Placement="Bottom" />
 					</Button.ContextMenu>
 				</Button>
@@ -305,7 +339,7 @@
 							FontFamily="{DynamicResource {x:Static SystemFonts.MessageFontFamilyKey}}"
 							FontSize="12"
 							ItemContainerStyle="{StaticResource ChoiceMenuItemStyle}"
-							ItemsSource="{Binding LanguageChoices, Mode=OneTime}"
+							ItemsSource="{Binding Appearance.LanguageChoices, Mode=OneTime}"
 							Placement="Bottom" />
 					</Button.ContextMenu>
 				</Button>
@@ -351,19 +385,19 @@
 					</ItemsPanelTemplate>
 				</StatusBar.ItemsPanel>
 				<StatusBarItem Grid.Column="0" Padding="6,2">
-					<TextBlock Text="{Binding StatusFrame}" />
+					<TextBlock Text="{Binding Status.StatusFrame}" />
 				</StatusBarItem>
 				<StatusBarItem Grid.Column="1" Padding="6,2">
-					<TextBlock Text="{Binding StatusTransparent}" />
+					<TextBlock Text="{Binding Status.StatusTransparent}" />
 				</StatusBarItem>
 				<StatusBarItem Grid.Column="2" Padding="6,2">
-					<TextBlock Text="{Binding StatusPalette}" TextTrimming="CharacterEllipsis" />
+					<TextBlock Text="{Binding Status.StatusPalette}" TextTrimming="CharacterEllipsis" />
 				</StatusBarItem>
 				<StatusBarItem Grid.Column="3" Padding="6,2">
-					<TextBlock Text="{Binding StatusAutoCutting}" />
+					<TextBlock Text="{Binding Status.StatusAutoCutting}" />
 				</StatusBarItem>
 				<StatusBarItem Grid.Column="4" Padding="6,2">
-					<TextBlock Text="{Binding StatusLock}" />
+					<TextBlock Text="{Binding Status.StatusLock}" />
 				</StatusBarItem>
 				<StatusBarItem
 					Grid.Column="5"
@@ -373,11 +407,17 @@
 						<ProgressBar
 							Height="8"
 							Margin="0,0,60,0"
-							Maximum="{Binding ProgressMaximum, Mode=OneWay}"
+							Maximum="{Binding Status.ProgressMaximum, Mode=OneWay}"
 							Minimum="0"
-							Visibility="{Binding ProgressVisible, Converter={StaticResource BoolToVis}}"
-							Value="{Binding ProgressValue, Mode=OneWay}" />
-						<TextBlock HorizontalAlignment="Right" Text="{Binding ZoomText}" />
+							Visibility="{Binding Status.ProgressVisible, Converter={StaticResource BoolToVis}}"
+							Value="{Binding Status.ProgressValue, Mode=OneWay}" />
+						<TextBlock
+							Margin="0,0,60,0"
+							HorizontalAlignment="Left"
+							Opacity="0.7"
+							Text="{Binding Status.StatusHint}"
+							TextTrimming="CharacterEllipsis" />
+						<TextBlock HorizontalAlignment="Right" Text="{Binding Status.ZoomText}" />
 					</Grid>
 				</StatusBarItem>
 			</StatusBar>
@@ -416,11 +456,11 @@
 					VerticalAlignment="Center"
 					DisplayMemberPath="Value"
 					IsEnabled="{Binding IsIdle}"
-					ItemsSource="{Binding DirectionNames}"
-					SelectedIndex="{Binding CurrentDirection, Mode=TwoWay}" />
+					ItemsSource="{Binding FrameList.DirectionNames}"
+					SelectedIndex="{Binding FrameList.CurrentDirection, Mode=TwoWay}" />
 				<Button
 					AutomationProperties.Name="{loc:T 'Frames Offset (Ctrl+D)'}"
-					Command="{Binding FramesOffsetCommand, Mode=OneTime}"
+					Command="{Binding FrameList.FramesOffsetCommand, Mode=OneTime}"
 					Style="{StaticResource ToolButton}"
 					ToolTip="{loc:T 'Frames Offset (Ctrl+D)'}">
 					<TextBlock Style="{StaticResource Glyph}" Text="&#xE759;" />
@@ -428,35 +468,35 @@
 				<Separator Margin="3,2" />
 				<Button
 					AutomationProperties.Name="{loc:T 'Add Frames (Ctrl+A)'}"
-					Command="{Binding AddFramesCommand, Mode=OneTime}"
+					Command="{Binding FrameList.AddFramesCommand, Mode=OneTime}"
 					Style="{StaticResource ToolButton}"
 					ToolTip="{loc:T 'Add Frames (Ctrl+A)'}">
 					<TextBlock Style="{StaticResource Glyph}" Text="&#xE710;" />
 				</Button>
 				<Button
 					AutomationProperties.Name="{loc:T 'Frame Down'}"
-					Command="{Binding FrameDownCommand, Mode=OneTime}"
+					Command="{Binding FrameList.FrameDownCommand, Mode=OneTime}"
 					Style="{StaticResource ToolButton}"
 					ToolTip="{loc:T 'Frame Down'}">
 					<TextBlock Style="{StaticResource Glyph}" Text="&#xE74B;" />
 				</Button>
 				<Button
 					AutomationProperties.Name="{loc:T 'Frame Up'}"
-					Command="{Binding FrameUpCommand, Mode=OneTime}"
+					Command="{Binding FrameList.FrameUpCommand, Mode=OneTime}"
 					Style="{StaticResource ToolButton}"
 					ToolTip="{loc:T 'Frame Up'}">
 					<TextBlock Style="{StaticResource Glyph}" Text="&#xE74A;" />
 				</Button>
 				<Button
 					AutomationProperties.Name="{loc:T 'Frame Offset (Ctrl+F)'}"
-					Command="{Binding FrameOffsetCommand, Mode=OneTime}"
+					Command="{Binding FrameList.FrameOffsetCommand, Mode=OneTime}"
 					Style="{StaticResource ToolButton}"
 					ToolTip="{loc:T 'Frame Offset (Ctrl+F)'}">
 					<TextBlock Style="{StaticResource Glyph}" Text="&#xE8AD;" />
 				</Button>
 				<Button
 					AutomationProperties.Name="{loc:T 'Remove Frames (Del)'}"
-					Command="{Binding RemoveFramesCommand, Mode=OneTime}"
+					Command="{Binding FrameList.RemoveFramesCommand, Mode=OneTime}"
 					Style="{StaticResource ToolButton}"
 					ToolTip="{loc:T 'Remove Frames (Del)'}">
 					<TextBlock Style="{StaticResource Glyph}" Text="&#xE74D;" />
@@ -500,16 +540,16 @@
 						Orientation="Horizontal">
 						<ToggleButton
 							AutomationProperties.Name="{loc:T 'Move frame'}"
-							Command="{Binding ToggleMoveCommand, Mode=OneTime}"
-							IsChecked="{Binding IsMoveTool, Mode=OneWay}"
+							Command="{Binding Canvas.ToggleMoveCommand, Mode=OneTime}"
+							IsChecked="{Binding Canvas.IsMoveTool, Mode=OneWay}"
 							Style="{StaticResource ToolToggle}"
 							ToolTip="{loc:T 'Move frame'}">
 							<TextBlock Style="{StaticResource Glyph}" Text="&#xE7C9;" />
 						</ToggleButton>
 						<ToggleButton
 							AutomationProperties.Name="{loc:T 'Pick sample color'}"
-							Command="{Binding TogglePickCommand, Mode=OneTime}"
-							IsChecked="{Binding IsPickTool, Mode=OneWay}"
+							Command="{Binding Canvas.TogglePickCommand, Mode=OneTime}"
+							IsChecked="{Binding Canvas.IsPickTool, Mode=OneWay}"
 							Style="{StaticResource ToolToggle}"
 							ToolTip="{loc:T 'Pick sample color'}">
 							<TextBlock Style="{StaticResource Glyph}" Text="&#xE7E6;" />
@@ -518,19 +558,19 @@
 							Width="52"
 							Height="20"
 							Margin="8,0,6,0"
-							Background="{Binding SampleBrush}"
+							Background="{Binding Canvas.SampleBrush}"
 							BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
 							BorderThickness="1"
 							CornerRadius="3"
 							Cursor="Hand"
 							MouseLeftButtonUp="OnSampleClick"
-							ToolTip="{Binding SampleToolTip}" />
+							ToolTip="{Binding Canvas.SampleToolTip}" />
 						<TextBlock VerticalAlignment="Center" Text="{loc:T 'Sample'}" />
 					</StackPanel>
 					<ListBox
 						x:Name="FrameList"
 						IsEnabled="{Binding IsIdle}"
-						ItemsSource="{Binding Frames}"
+						ItemsSource="{Binding FrameList.Frames}"
 						SelectionChanged="OnFrameSelectionChanged"
 						SelectionMode="Extended" />
 				</DockPanel>
@@ -547,7 +587,7 @@
 					BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
 					BorderThickness="1"
 					ClipToBounds="True">
-					<controls:FrameCanvas x:Name="Canvas" />
+					<controls:FrameCanvas x:Name="DrawingArea" DataContext="{Binding Canvas}" />
 				</Border>
 			</Grid>
 		</DockPanel>

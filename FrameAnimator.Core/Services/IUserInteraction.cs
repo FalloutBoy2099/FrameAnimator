@@ -11,11 +11,11 @@ namespace FrameAnimator.Core.Services
     /// </summary>
     public interface IUserInteraction
     {
-        /// <summary>Error message (<c>mtError</c>, OK button).</summary>
-        void ShowError(String message);
+        /// <summary>Error message (<c>mtError</c>, OK button). The implementation renders it in its language.</summary>
+        void ShowError(UserMessage message);
 
         /// <summary>Yes/No question (<c>mtConfirmation</c>). Returns <c>true</c> for Yes.</summary>
-        Boolean Confirm(String message);
+        Boolean Confirm(UserMessage message);
 
         /// <summary>
         /// "Save Frames As" dialog (BMP/PNG/GIF), pre-filled with <paramref name="suggestedName"/> (project name without extension).
@@ -36,14 +36,28 @@ namespace FrameAnimator.Core.Services
     /// <summary>Silent implementation: all errors are collected, questions receive a fixed answer.</summary>
     public sealed class SilentInteraction(Boolean confirmAnswer = false) : IUserInteraction
     {
+        /// <summary>The errors, as English texts.</summary>
         public List<String> Errors { get; } = [];
+
+        /// <summary>The questions, as English texts.</summary>
         public List<String> Questions { get; } = [];
 
-        public void ShowError(String message) => Errors.Add(message);
+        /// <summary>The errors as messages (format and arguments).</summary>
+        public List<UserMessage> ErrorMessages { get; } = [];
 
-        public Boolean Confirm(String message)
+        /// <summary>The questions as messages (format and arguments).</summary>
+        public List<UserMessage> QuestionMessages { get; } = [];
+
+        public void ShowError(UserMessage message)
         {
-            Questions.Add(message);
+            ErrorMessages.Add(message);
+            Errors.Add(message.ToString());
+        }
+
+        public Boolean Confirm(UserMessage message)
+        {
+            QuestionMessages.Add(message);
+            Questions.Add(message.ToString());
             return confirmAnswer;
         }
 

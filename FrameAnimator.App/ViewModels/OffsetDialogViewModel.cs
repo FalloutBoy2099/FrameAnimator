@@ -12,12 +12,14 @@ namespace FrameAnimator.App.ViewModels
     {
         private readonly OffsetDialogRequest _request;
         private readonly IMessageService _messages;
+        private readonly ILocalizer _localizer;
 
-        public OffsetDialogViewModel(OffsetDialogRequest request, IMessageService messages)
+        public OffsetDialogViewModel(OffsetDialogRequest request, IMessageService messages, ILocalizer localizer)
         {
             _request = request;
             _messages = messages;
-            Title = Localizer.T(request.Title);
+            _localizer = localizer;
+            Title = localizer.T(request.Title);
             XText = request.X.ToString(CultureInfo.InvariantCulture);
             YText = request.Y.ToString(CultureInfo.InvariantCulture);
             Inherit = request.InheritChecked;
@@ -60,7 +62,7 @@ namespace FrameAnimator.App.ViewModels
         {
             if (!TryParse(XText, out Int32 x))
             {
-                _messages.ShowWarning(Localizer.F("'{0}' is not a valid integer value!", XText));
+                _messages.ShowWarning(_localizer.F("'{0}' is not a valid integer value!", XText));
                 return;
             }
             x = (Int16)x;

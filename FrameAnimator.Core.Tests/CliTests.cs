@@ -605,6 +605,46 @@ namespace FrameAnimator.Core.Tests
             Assert.False(File.Exists(dir.File("hero.gif")));
         }
 
+        // ------------------------------------------------------------------ relative paths
+
+        [Fact]
+        public void RelativeWritesTheProjectPathsRelativeToItsFolder()
+        {
+            using TempDir dir = new();
+            String frm = MakeFrm(dir);
+
+            (Int32 code, _, String error) = Run("convert", frm, "/to:fpr", "/relative", "/quiet");
+            Assert.True(code == 0, error);
+
+            String text = File.ReadAllText(dir.File("hero.fpr"));
+            Assert.Contains("Frame(0,0)=0,0,hero000000.BMP", text);
+            Assert.DoesNotContain(dir.Path, text);
+        }
+
+        [Fact]
+        public void WithoutRelativeThePathsStayAbsoluteLikeTheOriginal()
+        {
+            using TempDir dir = new();
+            String frm = MakeFrm(dir);
+
+            Assert.Equal(0, Run("convert", frm, "/to:fpr", "/quiet").Code);
+
+            Assert.Contains(dir.Path, File.ReadAllText(dir.File("hero.fpr")));
+        }
+
+        [Fact]
+        public void ScriptAcceptsRelativeToo()
+        {
+            using TempDir dir = new();
+            String frm = MakeFrm(dir);
+            String script = dir.File("s.fas");
+            File.WriteAllText(script, "SAVE," + dir.File("t.fpr") + ",BMP");
+
+            (Int32 code, _, String error) = Run("script", script, "/open:" + frm, "/relative", "/quiet");
+            Assert.True(code == 0, error);
+            Assert.DoesNotContain(dir.Path, File.ReadAllText(dir.File("t.fpr")));
+        }
+
         // ------------------------------------------------------------------ diagnostic
 
         [Fact]

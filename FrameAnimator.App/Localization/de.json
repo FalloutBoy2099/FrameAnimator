@@ -132,5 +132,20 @@
   "Project": "Projekt",
   "Fallout Palette": "Fallout-Palette",
   "Action Script": "Aktionsskript",
-  "Background": "Hintergrund"
+  "Background": "Hintergrund",
+  "Relative pa_ths": "Relative Pf_ade",
+  "Write the paths of the project file relative to its folder": "Pfade der Projektdatei relativ zu ihrem Ordner schreiben",
+  "Animation pre_view": "Animations_vorschau",
+  "Animation preview": "Animationsvorschau",
+  "Previous frame": "Vorheriges Frame",
+  "Next frame": "Nächstes Frame",
+  "Play": "Wiedergabe",
+  "Pause": "Pause",
+  "No frames": "Keine Frames",
+  "Frame {0}/{1} - {2} fps": "Frame {0}/{1} - {2} fps",
+  "Save changes to '{0}'?": "Änderungen an '{0}' speichern?",
+  "Recent _projects": "Zuletzt _geöffnet",
+  "Clear list": "Liste leeren",
+  "Drag the frame, or use the arrow keys (Shift: 10 pixels, Ctrl: following frames too)": "Frame ziehen oder Pfeiltasten verwenden (Umschalt: 10 Pixel, Strg: auch folgende Frames)",
+  "Click a pixel to use its color as the sample": "Auf einen Pixel klicken, um seine Farbe als Beispiel zu verwenden"
 }

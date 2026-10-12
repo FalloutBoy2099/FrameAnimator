@@ -259,7 +259,7 @@ namespace FrameAnimator.Core.Cli
         }
 
         private ConsoleInteraction NewInteraction(ParsedCommandLine line)
-            => new ConsoleInteraction(error, line.Has("continue"), ParseFrames(line));
+            => new ConsoleInteraction(error, line.Has("continue"), ParseFrames(line), language);
 
         private static ProjectService NewService(ConsoleInteraction ui)
         {
@@ -282,7 +282,7 @@ namespace FrameAnimator.Core.Cli
 
         private Int32 Convert(ParsedCommandLine line)
         {
-            ValidateOptions(line, "format", "dest", "palette", "frames", "continue", "quiet");
+            ValidateOptions(line, "format", "dest", "palette", "frames", "continue", "quiet", "relative");
             if (line.Positional.Count == 0)
                 throw new CommandLineException("No source file: give at least one FPR, FRM or FR0-FR5 file.");
             (String mask, AutomationFormat format) = BuildMask(line.Get("dest"), ParseFormat(line), replaceExtension: false);
@@ -291,7 +291,7 @@ namespace FrameAnimator.Core.Cli
 
         private Int32 Automate(ParsedCommandLine line)
         {
-            ValidateOptions(line, "format", "dest", "source", "palette", "script", "frames", "continue", "quiet");
+            ValidateOptions(line, "format", "dest", "source", "palette", "script", "frames", "continue", "quiet", "relative");
             List<String> patterns = [.. line.Positional, .. line.GetAll("source")];
             if (patterns.Count == 0)
                 throw new CommandLineException("No source file: give at least one FPR, FRM or FR0-FR5 file.");
@@ -320,6 +320,7 @@ namespace FrameAnimator.Core.Cli
 
             ConsoleInteraction ui = NewInteraction(line);
             ProjectService service = NewService(ui);
+            service.SaveRelativePaths = line.Has("relative");
             AutomationRunner runner = new AutomationRunner(service);
 
             Int32 failed = problems;
@@ -523,7 +524,7 @@ namespace FrameAnimator.Core.Cli
 
         private Int32 RunScript(ParsedCommandLine line)
         {
-            ValidateOptions(line, "open", "palette", "frames", "continue", "quiet");
+            ValidateOptions(line, "open", "palette", "frames", "continue", "quiet", "relative");
             if (line.Positional.Count != 1)
                 throw new CommandLineException("Give exactly one script file (.fas).");
 
@@ -539,6 +540,7 @@ namespace FrameAnimator.Core.Cli
 
             ConsoleInteraction ui = NewInteraction(line);
             ProjectService service = NewService(ui);
+            service.SaveRelativePaths = line.Has("relative");
             if (open is not null)
             {
                 if (!OpenSource(service, open, palette))
@@ -605,7 +607,7 @@ namespace FrameAnimator.Core.Cli
 
             if (Path.GetExtension(path).Equals(".FPR", StringComparison.OrdinalIgnoreCase))
             {
-                ProjectService service = NewService(new ConsoleInteraction(error, continueOnError: true, "BMP"));
+                ProjectService service = NewService(new ConsoleInteraction(error, continueOnError: true, "BMP", language));
                 if (!service.LoadProject(path))
                     return OperationFailed;
                 Project p = service.Project;

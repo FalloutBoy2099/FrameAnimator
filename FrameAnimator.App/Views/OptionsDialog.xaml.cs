@@ -7,8 +7,6 @@ namespace FrameAnimator.App.Views
         public OptionsDialog()
         {
             InitializeComponent();
-            TitleBarTheme.Attach(this);
-            WindowMemory.Attach(this);
         }
     }
 }

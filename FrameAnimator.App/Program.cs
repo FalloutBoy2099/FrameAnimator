@@ -16,6 +16,8 @@ namespace FrameAnimator.App
             if (CliApp.IsConsoleInvocation(args))
                 return ConsoleHost.Run(args);
 
+            // the services exist before App.xaml is loaded: the markup of its resources may already need them
+            AppServices.Configure();
             App app = new();
             app.InitializeComponent();
             return app.Run();

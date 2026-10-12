@@ -34,7 +34,23 @@ namespace FrameAnimator.Core.Imaging
     {
         public static GifImage ReadFile(String path) => Read(File.ReadAllBytes(path));
 
+        /// <summary>
+        /// Decodes a GIF file. Sizes and counts are validated against <see cref="ImageLimits"/> before any buffer is allocated,
+        /// and any failure on corrupt data is reported as an <see cref="ImageFormatException"/>.
+        /// </summary>
         public static GifImage Read(Byte[] d)
+        {
+            try
+            {
+                return ReadCore(d);
+            }
+            catch (Exception e) when (e is not ImageFormatException and not OutOfMemoryException)
+            {
+                throw new ImageFormatException("The GIF file is corrupt: " + e.Message, e);
+            }
+        }
+
+        private static GifImage ReadCore(Byte[] d)
         {
             if (d.Length < 13 || d[0] != 'G' || d[1] != 'I' || d[2] != 'F')
                 throw new ImageFormatException("Invalid GIF signature");
@@ -54,6 +70,7 @@ namespace FrameAnimator.Core.Imaging
 
             var gif = new GifImage { ScreenWidth = sw, ScreenHeight = sh };
             var imageIndex = 0;
+            Int64 totalPixels = 0;
 
             while (pos < d.Length)
             {
@@ -68,6 +85,11 @@ namespace FrameAnimator.Core.Imaging
                 }
                 if (block != 0x2C)
                     throw new ImageFormatException("Unknown GIF block type");
+
+                if (imageIndex >= ImageLimits.MaxGifSubImages)
+                    throw new ImageFormatException("Too many images in the GIF file.");
+                if (pos + 9 >= d.Length)
+                    throw new ImageFormatException("Unexpected end of the GIF file.");
 
                 Int32 left = BitConverter.ToUInt16(d, pos), top = BitConverter.ToUInt16(d, pos + 2);
                 Int32 w = BitConverter.ToUInt16(d, pos + 4), h = BitConverter.ToUInt16(d, pos + 6);
@@ -84,6 +106,8 @@ namespace FrameAnimator.Core.Imaging
                 }
 
                 var interlaced = (f & 0x40) != 0;
+                if (pos >= d.Length)
+                    throw new ImageFormatException("Unexpected end of the GIF file.");
                 var minCode = d[pos++];
 
                 var data = ReadSubBlocks(d, ref pos);
@@ -95,6 +119,15 @@ namespace FrameAnimator.Core.Imaging
                 }
                 if (pal is null)
                     throw new ImageFormatException("No global or local color table defined");
+
+                // Declared size checked before the index buffer and the bitmap are allocated. The rectangle itself is not
+                // clipped to the logical screen: sub-images are returned uncomposited, so it costs no memory (and real files
+                // do exceed their screen).
+                if (!ImageLimits.IsValidSize(w, h))
+                    throw new ImageFormatException("Invalid GIF image size.");
+                totalPixels += (Int64)w * h;
+                if (totalPixels > ImageLimits.MaxGifTotalPixels)
+                    throw new ImageFormatException("The GIF file contains too many pixels.");
 
                 var indices = LzwDecode(data, minCode, w * h);
                 var bmp = new Bitmap32(w, h);
@@ -120,6 +153,9 @@ namespace FrameAnimator.Core.Imaging
 
         private static Int32[] ReadPalette(Byte[] d, ref Int32 pos, Int32 count)
         {
+            if (pos < 0 || pos + 3L * count > d.Length)
+                throw new ImageFormatException("Unexpected end of the GIF file.");
+
             var pal = new Int32[count];
 
             for (var i = 0; i < count; i++)

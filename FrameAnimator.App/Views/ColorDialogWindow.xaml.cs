@@ -7,8 +7,6 @@ namespace FrameAnimator.App.Views
         public ColorDialogWindow()
         {
             InitializeComponent();
-            TitleBarTheme.Attach(this);
-            WindowMemory.Attach(this);
         }
     }
 }

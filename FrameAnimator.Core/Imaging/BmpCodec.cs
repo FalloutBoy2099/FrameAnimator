@@ -4,7 +4,17 @@ namespace FrameAnimator.Core.Imaging
     using System.IO;
     using Model;
 
-    public sealed class ImageFormatException(String message) : Exception(message);
+    /// <summary>Thrown by the image readers when a file is corrupt, truncated, unsupported or exceeds <see cref="ImageLimits"/>.</summary>
+    public sealed class ImageFormatException : Exception
+    {
+        public ImageFormatException(String message) : base(message)
+        {
+        }
+
+        public ImageFormatException(String message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
 
     /// <summary>
     /// Reading (1/4/8/16/24/32 bits, RLE4/RLE8, bitfields, top-down or bottom-up, OS/2, V3, V4, V5 headers) and writing
@@ -21,7 +31,23 @@ namespace FrameAnimator.Core.Imaging
 
         public static Bitmap32 ReadFile(String path) => Read(File.ReadAllBytes(path));
 
+        /// <summary>
+        /// Decodes a BMP file. Declared sizes are validated against <see cref="ImageLimits"/> before anything is allocated;
+        /// any failure on corrupt data is reported as an <see cref="ImageFormatException"/>.
+        /// </summary>
         public static Bitmap32 Read(Byte[] d)
+        {
+            try
+            {
+                return ReadCore(d);
+            }
+            catch (Exception e) when (e is not ImageFormatException and not OutOfMemoryException)
+            {
+                throw new ImageFormatException("The BMP file is corrupt: " + e.Message, e);
+            }
+        }
+
+        private static Bitmap32 ReadCore(Byte[] d)
         {
             if (d.Length < 26 || d[0] != (Byte)'B' || d[1] != (Byte)'M')
                 throw new ImageFormatException("Not a BMP file.");
@@ -40,7 +66,7 @@ namespace FrameAnimator.Core.Imaging
             }
             else
             {
-                if (headerSize < 40 || d.Length < 14 + headerSize)
+                if (headerSize < 40 || 14L + headerSize > d.Length)
                     throw new ImageFormatException("Unsupported BMP header.");
                 width = BitConverter.ToInt32(d, 18);
                 height = BitConverter.ToInt32(d, 22);
@@ -49,14 +75,24 @@ namespace FrameAnimator.Core.Imaging
                 colorsUsed = BitConverter.ToInt32(d, 46);
             }
 
+            // Int64 on purpose: -Int32.MinValue overflows and width * height can exceed Int32.
+            Int64 absHeight = Math.Abs((Int64)height);
             var topDown = height < 0;
-            if (topDown)
-                height = -height;
 
-            if (width <= 0 || height <= 0 || width > 65535 || height > 65535)
+            if (!ImageLimits.IsValidSize(width, absHeight))
                 throw new ImageFormatException("Invalid BMP dimensions.");
+            height = (Int32)absHeight;
 
-            var paletteOffset = 14 + headerSize;
+            if (bpp is not (1 or 2 or 4 or 8 or 16 or 24 or 32))
+                throw new ImageFormatException("Unsupported bits per pixel.");
+            if (compression is not (0 or 1 or 2 or 3 or 6))
+                throw new ImageFormatException("Unsupported BMP compression.");
+            if ((compression == 1 && bpp != 8) || (compression == 2 && bpp != 4))
+                throw new ImageFormatException("Inconsistent BMP compression and bits per pixel.");
+            if (pixelOffset < 0)
+                throw new ImageFormatException("Invalid BMP pixel data offset.");
+
+            var paletteOffset = 14 + headerSize; // <= d.Length (checked above), cannot overflow
             Int32[]? pal = null;
             UInt32 rMask = 0, gMask = 0, bMask = 0;
 
@@ -81,6 +117,7 @@ namespace FrameAnimator.Core.Imaging
                 bMask = BitConverter.ToUInt32(d, 62);
             }
 
+            // every declared value has been validated: only now is the pixel buffer allocated
             var bmp = new Bitmap32(width, height);
             Int32 rowBytes = (bpp * width + 31) / 32 * 4;
 
@@ -92,15 +129,16 @@ namespace FrameAnimator.Core.Imaging
 
             if (compression == 1 || compression == 2) // RLE8 / RLE4
             {
-                DecodeRle(d, pixelOffset, width, height, compression == 1, pal ?? throw new ImageFormatException("RLE sans palette."), Put);
+                DecodeRle(d, pixelOffset, width, height, compression == 1, pal ?? throw new ImageFormatException("RLE without palette."), Put);
                 return bmp;
             }
 
             for (var yf = 0; yf < height; yf++)
             {
-                var rowStart = pixelOffset + yf * rowBytes;
-                if (rowStart >= d.Length)
+                Int64 rowStart64 = pixelOffset + (Int64)yf * rowBytes;
+                if (rowStart64 >= d.Length)
                     break;
+                var rowStart = (Int32)rowStart64;
                 for (var x = 0; x < width; x++)
                 {
                     Int32 rgb;

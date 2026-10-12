@@ -1,182 +1,138 @@
 namespace FrameAnimator.App.Tests
 {
     using System;
-    using System.Collections.Generic;
-    using System.ComponentModel;
+    using System.IO;
     using System.Linq;
-    using System.Windows.Threading;
-    using CommunityToolkit.Mvvm.Messaging;
+    using System.Threading.Tasks;
+    using System.Windows;
     using FrameAnimator.App.Infrastructure;
-    using FrameAnimator.App.ViewModels;
-    using FrameAnimator.App.Views;
     using FrameAnimator.Core.Model;
+    using FrameAnimator.Core.Scripting;
 
-    /// <summary>View model of the main window: commands (CommunityToolkit.Mvvm), enabling rules, state and messages.</summary>
+    /// <summary>The file and project actions of the main window, and how its parts are wired together.</summary>
     public class MainViewModelTests
     {
-        private static MainViewModel Create(FakeDialogService dialogs) => new(Dispatcher.CurrentDispatcher, dialogs, "");
-
-        /// <summary>A view model that already holds two frames in the current direction.</summary>
-        private static MainViewModel WithTwoFrames(TempDir dir, FakeDialogService dialogs)
-        {
-            dialogs.OpenFilesAnswer = (_, _, _) => [Images.WriteBmp(dir, "a.bmp"), Images.WriteBmp(dir, "b.bmp")];
-            MainViewModel viewModel = Create(dialogs);
-            viewModel.AddFramesCommand.Execute(null);
-            return viewModel;
-        }
-
         [Fact]
         public void StartsWithAnEmptyProject()
         {
-            MainViewModel viewModel = Create(new FakeDialogService());
+            Shell shell = Shell.Create();
 
-            Assert.Empty(viewModel.Frames);
-            Assert.False(viewModel.HasFrames);
-            Assert.Equal(-1, viewModel.SelectedFrameIndex);
-            Assert.Equal("Untitled.fpr — Frame Animator", viewModel.Title);
-            Assert.Equal(6, viewModel.DirectionNames.Count);
-            Assert.False(viewModel.ShowHexes);
-            Assert.True(viewModel.ShowBackground);
+            Assert.Equal("Untitled.fpr — Frame Animator", shell.Main.Title);
+            Assert.True(shell.Main.IsIdle);
+            Assert.False(shell.Main.IsBatchRunning);
+        }
+
+        [Fact]
+        public void TheWindowIsMadeOfItsParts()
+        {
+            Shell shell = Shell.Create();
+
+            Assert.Same(shell.FrameList, shell.Main.FrameList);
+            Assert.Same(shell.Canvas, shell.Main.Canvas);
+            Assert.Same(shell.Status, shell.Main.Status);
+            Assert.Same(shell.Appearance, shell.Main.Appearance);
+            Assert.Same(shell.Session.Project, shell.Main.Project);
         }
 
         [Fact]
         public void EnablingRulesFollowTheContent()
         {
-            using TempDir dir = new();
-            FakeDialogService dialogs = new();
-            MainViewModel viewModel = Create(dialogs);
+            Shell shell = Shell.Create();
 
-            Assert.True(viewModel.NewCommand.CanExecute(null));
-            Assert.True(viewModel.AddFramesCommand.CanExecute(null));
-            Assert.False(viewModel.FramesOffsetCommand.CanExecute(null));
-            Assert.False(viewModel.FrameUpCommand.CanExecute(null));
-            Assert.False(viewModel.FrameDownCommand.CanExecute(null));
-            Assert.False(viewModel.RemoveFramesCommand.CanExecute(null));
-            Assert.False(viewModel.CreateFrmCommand.CanExecute(null));
-            Assert.False(viewModel.UndoCommand.CanExecute(null));
-            Assert.False(viewModel.CancelCommand.CanExecute(null));
-
-            dialogs.OpenFilesAnswer = (_, _, _) => [Images.WriteBmp(dir, "a.bmp"), Images.WriteBmp(dir, "b.bmp")];
-            viewModel.AddFramesCommand.Execute(null);
-
-            Assert.Equal(2, viewModel.Frames.Count);
-            Assert.Equal(0, viewModel.SelectedFrameIndex);
-            Assert.True(viewModel.FramesOffsetCommand.CanExecute(null));
-            Assert.True(viewModel.FrameOffsetCommand.CanExecute(null));
-            Assert.True(viewModel.RemoveFramesCommand.CanExecute(null));
-            Assert.False(viewModel.FrameUpCommand.CanExecute(null));
-            Assert.True(viewModel.FrameDownCommand.CanExecute(null));
+            Assert.True(shell.Main.NewCommand.CanExecute(null));
+            Assert.True(shell.Main.OpenCommand.CanExecute(null));
+            Assert.True(shell.Main.SaveCommand.CanExecute(null));
+            Assert.True(shell.Main.AutomateCommand.CanExecute(null));
+            Assert.False(shell.Main.CreateFrmCommand.CanExecute(null));
+            Assert.False(shell.Main.UndoCommand.CanExecute(null));
+            Assert.False(shell.Main.CancelCommand.CanExecute(null));
         }
 
         [Fact]
-        public void ChangingTheSelectionUpdatesTheCommandsAndRaisesCanExecuteChanged()
+        public void ANewProjectEmptiesTheList()
         {
             using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
+            Shell shell = Shell.WithTwoFrames(dir);
+            shell.Dialogs.YesNoCancelAnswer = MessageBoxResult.No; // discard the unsaved frames
 
-            Int32 raised = 0;
-            viewModel.FrameDownCommand.CanExecuteChanged += (_, _) => raised++;
-            viewModel.SelectedFrameIndex = 1;
+            shell.Main.NewCommand.Execute(null);
 
-            Assert.True(raised > 0);
-            Assert.False(viewModel.FrameDownCommand.CanExecute(null));
-            Assert.True(viewModel.FrameUpCommand.CanExecute(null));
-            Assert.Equal("Frame 2/2", viewModel.StatusFrame);
+            Assert.Empty(shell.FrameList.Frames);
+            Assert.False(shell.Session.HasFrames);
         }
 
         [Fact]
-        public void FrameOffsetOfAFollowingFrameIsBlockedByLockOffsets()
+        public void AFileOpenedFromTheDialogReplacesTheProject()
         {
             using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
+            Shell source = Shell.WithTwoFrames(dir);
+            String project = dir.File("p.fpr");
+            Assert.True(source.Main.Service.SaveProject(project, dir.File("p.BMP")));
 
-            viewModel.SelectedFrameIndex = 1;
-            Assert.True(viewModel.Project.Settings.LockOffsets);
-            Assert.False(viewModel.FrameOffsetCommand.CanExecute(null));
+            Shell shell = Shell.Create();
+            shell.Dialogs.OpenFilesAnswer = (_, _, _) => [project];
+            shell.Main.OpenCommand.Execute(null);
 
-            viewModel.Project.Settings.LockOffsets = false;
-            viewModel.RefreshAll();
-            Assert.True(viewModel.FrameOffsetCommand.CanExecute(null));
+            Assert.Equal(2, shell.FrameList.Frames.Count);
+            Assert.Equal("p.fpr — Frame Animator", shell.Main.Title);
         }
 
         [Fact]
-        public void FrameDownAndFrameUpMoveTheFrameAndKeepItSelected()
+        public void SaveAsAsksForAnFprNameAndWritesTheProject()
         {
             using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
-            String first = viewModel.Frames[0];
+            Shell shell = Shell.WithTwoFrames(dir);
+            String target = dir.File("saved.fpr");
+            String? suggested = null;
+            shell.Dialogs.SaveFileAnswer = (_, _, _, name, _) =>
+            {
+                suggested = name;
+                return target;
+            };
 
-            viewModel.FrameDownCommand.Execute(null);
-            Assert.Equal(first, viewModel.Frames[1]);
-            Assert.Equal(1, viewModel.SelectedFrameIndex);
+            shell.Main.SaveAsCommand.Execute(null);
 
-            viewModel.FrameUpCommand.Execute(null);
-            Assert.Equal(first, viewModel.Frames[0]);
-            Assert.Equal(0, viewModel.SelectedFrameIndex);
+            Assert.Equal("Untitled.fpr", suggested);
+            Assert.True(File.Exists(target));
+            Assert.Equal("saved.fpr — Frame Animator", shell.Main.Title);
         }
 
         [Fact]
-        public void RemoveFramesDeletesTheSelectedFrames()
+        public void CancellingSaveAsWritesNothing()
         {
             using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
-            String second = viewModel.Frames[1];
+            Shell shell = Shell.WithTwoFrames(dir);
 
-            viewModel.SetSelectedIndices([0]);
-            viewModel.RemoveFramesCommand.Execute(null);
+            shell.Main.SaveAsCommand.Execute(null);
 
-            Assert.Single(viewModel.Frames);
-            Assert.Equal(second, viewModel.Frames[0]);
+            Assert.Equal("*Untitled.fpr — Frame Animator", shell.Main.Title); // still unsaved
         }
 
         [Fact]
-        public void FramesOffsetAsksForTheValuesAndStoresThem()
+        public void SaveWithoutAProjectFileFallsBackToSaveAs()
         {
             using TempDir dir = new();
-            FakeDialogService dialogs = new();
-            MainViewModel viewModel = WithTwoFrames(dir, dialogs);
-            dialogs.OffsetAnswer = _ => new OffsetDialogResult(5, -3, false);
+            Shell shell = Shell.WithTwoFrames(dir);
+            Int32 asked = 0;
+            shell.Dialogs.SaveFileAnswer = (_, _, _, _, _) =>
+            {
+                asked++;
+                return null;
+            };
 
-            viewModel.FramesOffsetCommand.Execute(null);
+            shell.Main.SaveCommand.Execute(null);
 
-            Assert.Equal("Frames Offset", dialogs.OffsetRequests.Single().Title);
-            Assert.Equal((5, -3), viewModel.Editor.GetFramesOffset(0));
-            Assert.True(viewModel.UndoCommand.CanExecute(null));
-
-            viewModel.UndoCommand.Execute(null);
-            Assert.False(viewModel.UndoCommand.CanExecute(null));
-        }
-
-        [Fact]
-        public void FirstFrameOffsetDialogEnablesTheWizardOnlyForTheFirstFrame()
-        {
-            using TempDir dir = new();
-            FakeDialogService dialogs = new();
-            MainViewModel viewModel = WithTwoFrames(dir, dialogs);
-            viewModel.Project.Settings.LockOffsets = false;
-
-            viewModel.FrameOffsetCommand.Execute(null);
-            viewModel.SelectedFrameIndex = 1;
-            viewModel.FrameOffsetCommand.Execute(null);
-
-            OffsetDialogRequest first = dialogs.OffsetRequests[0];
-            OffsetDialogRequest following = dialogs.OffsetRequests[1];
-            Assert.Equal("First Frame Offset", first.Title);
-            Assert.True(first.WizardEnabled);
-            Assert.False(first.InheritEnabled);
-            Assert.Equal("Frame Offset", following.Title);
-            Assert.False(following.WizardEnabled);
+            Assert.Equal(1, asked);
         }
 
         [Fact]
         public void OptionsCommandPassesTheSettingsAndTheFrameCount()
         {
             using TempDir dir = new();
-            FakeDialogService dialogs = new();
-            MainViewModel viewModel = WithTwoFrames(dir, dialogs);
+            Shell shell = Shell.WithTwoFrames(dir);
             ProjectSettings? seen = null;
             Int32 count = -1;
-            dialogs.OptionsAnswer = (settings, frames) =>
+            shell.Dialogs.OptionsAnswer = (settings, frames) =>
             {
                 seen = settings;
                 count = frames;
@@ -184,188 +140,154 @@ namespace FrameAnimator.App.Tests
                 return true;
             };
 
-            viewModel.OptionsCommand.Execute(null);
+            shell.Main.OptionsCommand.Execute(null);
 
-            Assert.Same(viewModel.Project.Settings, seen);
+            Assert.Same(shell.Session.Project.Settings, seen);
             Assert.Equal(2, count);
-            Assert.Equal("", viewModel.StatusAutoCutting);
+            Assert.Equal("", shell.Status.StatusAutoCutting);
         }
 
+        // ------------------------------------------------------------------ relative paths
+
         [Fact]
-        public void ZoomIsClampedAndTheZoomCommandsFollow()
+        public void RelativePathsAreOffByDefaultAndFollowTheChoice()
         {
-            MainViewModel viewModel = Create(new FakeDialogService());
-            Assert.Equal(2, viewModel.Zoom);
+            Shell shell = Shell.Create();
+            Assert.False(shell.Main.SaveRelativePaths);
+            Assert.False(shell.Main.Service.SaveRelativePaths);
 
-            for (Int32 i = 0; i < 20; i++)
-                viewModel.ZoomInCommand.Execute(null);
-            Assert.Equal(8, viewModel.Zoom);
-            Assert.False(viewModel.ZoomInCommand.CanExecute(null));
-            Assert.Equal("800 %", viewModel.ZoomText);
+            shell.Main.SaveRelativePaths = true;
 
-            viewModel.ZoomResetCommand.Execute(null);
-            Assert.Equal(1, viewModel.Zoom);
-            Assert.False(viewModel.ZoomOutCommand.CanExecute(null));
-            Assert.True(viewModel.ZoomInCommand.CanExecute(null));
+            Assert.True(shell.Main.Service.SaveRelativePaths);
+            Assert.True(shell.Preferences.SaveRelativePaths);
         }
 
         [Fact]
-        public void ViewTogglesFlipTheirFlagAndRedraw()
-        {
-            MainViewModel viewModel = Create(new FakeDialogService());
-            Int32 redraws = 0;
-            viewModel.RenderRequested += (_, _) => redraws++;
-
-            viewModel.ToggleHexesCommand.Execute(null);
-            viewModel.ToggleGhostCommand.Execute(null);
-            viewModel.ToggleBackgroundCommand.Execute(null);
-
-            Assert.True(viewModel.ShowHexes);
-            Assert.True(viewModel.ShowGhost);
-            Assert.False(viewModel.ShowBackground);
-            Assert.Equal(3, redraws);
-        }
-
-        [Fact]
-        public void ToolsAreExclusiveAndNotifyTheirFlags()
+        public void AProjectSavedWithRelativePathsHasNoAbsolutePathInIt()
         {
             using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
-            List<String?> changed = [];
-            viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+            Shell shell = Shell.WithTwoFrames(dir);
+            shell.Main.SaveRelativePaths = true;
+            String target = dir.File("rel.fpr");
+            shell.Dialogs.SaveFileAnswer = (_, _, _, _, _) => target;
 
-            viewModel.ToggleMoveCommand.Execute(null);
-            Assert.True(viewModel.IsMoveTool);
-            Assert.False(viewModel.IsPickTool);
+            shell.Main.SaveAsCommand.Execute(null);
 
-            viewModel.TogglePickCommand.Execute(null);
-            Assert.False(viewModel.IsMoveTool);
-            Assert.True(viewModel.IsPickTool);
-            Assert.Contains(nameof(MainViewModel.IsMoveTool), changed);
-            Assert.Contains(nameof(MainViewModel.IsPickTool), changed);
-
-            viewModel.TogglePickCommand.Execute(null);
-            Assert.Equal(EditTool.None, viewModel.Tool);
+            String text = File.ReadAllText(target);
+            Assert.DoesNotContain(dir.Path, text);
+            Assert.Contains("a.bmp", text);
         }
 
+        // ------------------------------------------------------------------ batch
+
         [Fact]
-        public void PickingASampleColorStoresIt()
+        public async Task ABatchWorksOnAProjectOfItsOwnAndLeavesTheOneOnScreenAlone()
         {
             using TempDir dir = new();
-            FakeDialogService dialogs = new();
-            MainViewModel viewModel = WithTwoFrames(dir, dialogs);
-            dialogs.ColorAnswer = _ => 0x123456;
+            Shell shell = Shell.WithTwoFrames(dir);
+            String source = dir.File("src.fpr");
+            Assert.True(shell.Main.Service.SaveProject(source, dir.File("src.BMP")));
+            String frame = shell.FrameList.Frames[0];
+            Directory.CreateDirectory(dir.File("out"));
+            AutomationOptions options = new() { DestinationMask = Path.Combine(dir.File("out"), "*.FPR") };
+            options.Sources.Add(source);
+            shell.Dialogs.AutomateAnswer = _ => options;
+            Int32 busyNotifications = 0;
+            shell.Main.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(shell.Main.IsBatchRunning))
+                    busyNotifications++;
+            };
 
-            viewModel.PickSampleColorCommand.Execute(null);
+            await shell.Main.AutomateCommand.ExecuteAsync(null);
 
-            Assert.Equal(0x123456, viewModel.Project.Settings.SampleColor);
-            Assert.Contains("123456", viewModel.SampleToolTip);
+            Assert.True(File.Exists(Path.Combine(dir.File("out"), "src.FPR")), String.Join("|", shell.Dialogs.Warnings));
+            Assert.Equal(2, shell.FrameList.Frames.Count);
+            Assert.Equal(frame, shell.FrameList.Frames[0]);
+            Assert.False(shell.Main.IsBatchRunning);
+            Assert.True(shell.Main.IsIdle);
+            Assert.Equal(2, busyNotifications); // started, finished
+            Assert.True(shell.Main.AutomateCommand.CanExecute(null));
         }
 
         [Fact]
-        public void DraggingWithTheMoveToolShiftsTheDirectionAndFillsTheUndoStack()
+        public async Task CancellingTheAutomateDialogStartsNothing()
+        {
+            Shell shell = Shell.Create();
+            shell.Dialogs.AutomateAnswer = _ => null;
+
+            await shell.Main.AutomateCommand.ExecuteAsync(null);
+
+            Assert.False(shell.Main.IsBatchRunning);
+        }
+
+        [Fact]
+        public void WhileABatchRunsAnotherJobCannotStartButTheProjectStaysEditable()
         {
             using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
-            viewModel.ToggleMoveCommand.Execute(null);
-            Assert.False(viewModel.UndoCommand.CanExecute(null));
+            Shell shell = Shell.WithTwoFrames(dir);
 
-            viewModel.CanvasMouseDown(0, 0);
-            viewModel.CanvasMouseMove(4, 2, shift: false, ctrl: false);
-            viewModel.CanvasMouseUp();
+            using (shell.Session.BeginBatch())
+            {
+                Assert.False(shell.Main.AutomateCommand.CanExecute(null));
+                Assert.False(shell.Main.NewCommand.CanExecute(null));
+                Assert.False(shell.Main.OpenCommand.CanExecute(null));
+                Assert.False(shell.Main.ExecuteScriptCommand.CanExecute(null));
+                Assert.True(shell.Main.CancelCommand.CanExecute(null));
+                Assert.True(shell.FrameList.AddFramesCommand.CanExecute(null));
+                Assert.True(shell.Main.SaveCommand.CanExecute(null));
+            }
 
-            Assert.Equal((4, 2), (viewModel.CurrentDir.ShiftBaseX, viewModel.CurrentDir.ShiftBaseY));
-            Assert.True(viewModel.UndoCommand.CanExecute(null));
-
-            viewModel.CanvasMouseMove(9, 9, shift: false, ctrl: false); // after mouse up: ignored
-            Assert.Equal((4, 2), (viewModel.CurrentDir.ShiftBaseX, viewModel.CurrentDir.ShiftBaseY));
+            Assert.True(shell.Main.AutomateCommand.CanExecute(null));
+            Assert.False(shell.Main.CancelCommand.CanExecute(null));
         }
 
         [Fact]
-        public void ChangingTheDirectionShowsItsFrames()
+        public void WhileAScriptRunsTheProjectIsLocked()
         {
             using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
+            Shell shell = Shell.WithTwoFrames(dir);
 
-            viewModel.CurrentDirection = 3;
+            using (shell.Session.BeginBusy())
+            {
+                Assert.True(shell.Main.IsBusy);
+                Assert.False(shell.Main.SaveCommand.CanExecute(null));
+                Assert.False(shell.FrameList.AddFramesCommand.CanExecute(null));
+                Assert.False(shell.FrameList.RemoveFramesCommand.CanExecute(null));
+                Assert.False(shell.Canvas.ToggleMoveCommand.CanExecute(null));
+                Assert.True(shell.Main.CancelCommand.CanExecute(null));
+            }
 
-            Assert.Empty(viewModel.Frames);
-            Assert.Equal(3, viewModel.CurrentDirection);
-            Assert.False(viewModel.FramesOffsetCommand.CanExecute(null));
-
-            viewModel.CurrentDirection = 0;
-            Assert.Equal(2, viewModel.Frames.Count);
+            Assert.False(shell.Main.IsBusy);
+            Assert.True(shell.FrameList.AddFramesCommand.CanExecute(null));
         }
 
         [Fact]
-        public void ANewProjectEmptiesTheList()
+        public void CancelAsksForConfirmationBeforeRequestingTheStop()
         {
-            using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
+            Shell shell = Shell.Create();
+            using (shell.Session.BeginBatch())
+            {
+                shell.Dialogs.YesNoAnswer = false;
+                shell.Main.CancelCommand.Execute(null);
+                Assert.False(shell.Session.Interaction.CancelRequested);
 
-            viewModel.NewCommand.Execute(null);
+                shell.Dialogs.YesNoAnswer = true;
+                shell.Main.CancelCommand.Execute(null);
+                Assert.True(shell.Session.Interaction.CancelRequested);
+            }
 
-            Assert.Empty(viewModel.Frames);
-            Assert.False(viewModel.HasFrames);
+            Assert.Equal(["Stop automated routine?", "Stop automated routine?"], shell.Dialogs.Questions);
         }
 
         [Fact]
-        public void AFileOpenedFromTheDialogReplacesTheProject()
+        public void ABusyScopeClearsAPreviousCancelRequest()
         {
-            using TempDir dir = new();
-            FakeDialogService dialogs = new();
-            MainViewModel source = WithTwoFrames(dir, dialogs);
-            String project = dir.File("p.fpr");
-            Assert.True(source.Service.SaveProject(project, dir.File("p.BMP")));
+            Shell shell = Shell.Create();
+            shell.Session.Interaction.CancelRequested = true;
 
-            MainViewModel viewModel = Create(dialogs);
-            dialogs.OpenFilesAnswer = (_, _, _) => [project];
-            viewModel.OpenCommand.Execute(null);
-
-            Assert.Equal(2, viewModel.Frames.Count);
-            Assert.Equal("p.fpr — Frame Animator", viewModel.Title);
-        }
-
-        [Fact]
-        public void TheLanguageMessageRefreshesTheComputedTexts()
-        {
-            using TempDir dir = new();
-            MainViewModel viewModel = WithTwoFrames(dir, new FakeDialogService());
-            List<String?> changed = [];
-            viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
-
-            WeakReferenceMessenger.Default.Send(new LanguageChangedMessage("en"));
-
-            Assert.Contains(nameof(MainViewModel.StatusFrame), changed);
-            Assert.Contains(nameof(MainViewModel.StatusPalette), changed);
-            Assert.Contains(nameof(MainViewModel.SampleToolTip), changed);
-        }
-
-        [Fact]
-        public void TheThemeMessageRedrawsTheDrawingArea()
-        {
-            MainViewModel viewModel = Create(new FakeDialogService());
-            Int32 redraws = 0;
-            viewModel.RenderRequested += (_, _) => redraws++;
-
-            WeakReferenceMessenger.Default.Send(new ThemeChangedMessage(ThemePreference.Dark));
-
-            Assert.Equal(1, redraws);
-        }
-
-        [Fact]
-        public void RaisesPropertyChangedThroughTheToolkit()
-        {
-            MainViewModel viewModel = Create(new FakeDialogService());
-            List<String?> changed = [];
-            ((INotifyPropertyChanged)viewModel).PropertyChanged += (_, e) => changed.Add(e.PropertyName);
-
-            viewModel.ShowFullNames = true;
-            viewModel.Zoom = 4;
-
-            Assert.Contains(nameof(MainViewModel.ShowFullNames), changed);
-            Assert.Contains(nameof(MainViewModel.Zoom), changed);
-            Assert.Contains(nameof(MainViewModel.ZoomText), changed);
+            using (shell.Session.BeginBatch())
+                Assert.False(shell.Session.Interaction.CancelRequested);
         }
     }
 }

@@ -64,6 +64,7 @@ namespace FrameAnimator.Core.Cli
             new OptionSpec("open", true, "open"),
             new OptionSpec("continue", false, "continue", "c", "yes", "y"),
             new OptionSpec("quiet", false, "quiet", "q"),
+            new OptionSpec("relative", false, "relative", "r"),
         ];
 
         /// <summary>

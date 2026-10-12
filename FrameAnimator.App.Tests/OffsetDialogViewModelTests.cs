@@ -24,7 +24,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void StartsFromTheRequest()
         {
-            OffsetDialogViewModel viewModel = new(Request(x => x), new FakeDialogService());
+            OffsetDialogViewModel viewModel = new(Request(x => x), new FakeDialogService(), TestServices.Localizer());
 
             Assert.Equal("Frame Offset", viewModel.Title);
             Assert.Equal("3", viewModel.XText);
@@ -40,9 +40,9 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void WizardNeedsAFunctionAndTheEnabledFlag()
         {
-            Assert.True(new OffsetDialogViewModel(Request(x => x), new FakeDialogService()).WizardCommand.CanExecute(null));
-            Assert.False(new OffsetDialogViewModel(Request(null), new FakeDialogService()).WizardCommand.CanExecute(null));
-            Assert.False(new OffsetDialogViewModel(Request(x => x, wizardEnabled: false), new FakeDialogService()).WizardCommand.CanExecute(null));
+            Assert.True(new OffsetDialogViewModel(Request(x => x), new FakeDialogService(), TestServices.Localizer()).WizardCommand.CanExecute(null));
+            Assert.False(new OffsetDialogViewModel(Request(null), new FakeDialogService(), TestServices.Localizer()).WizardCommand.CanExecute(null));
+            Assert.False(new OffsetDialogViewModel(Request(x => x, wizardEnabled: false), new FakeDialogService(), TestServices.Localizer()).WizardCommand.CanExecute(null));
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace FrameAnimator.App.Tests
             {
                 received.Add(x);
                 return x * 2;
-            }), new FakeDialogService());
+            }), new FakeDialogService(), TestServices.Localizer());
 
             viewModel.XText = " 70000 ";
             viewModel.WizardCommand.Execute(null);
@@ -68,7 +68,7 @@ namespace FrameAnimator.App.Tests
         public void WizardWithAnInvalidXWarnsAndKeepsTheValues()
         {
             FakeDialogService messages = new();
-            OffsetDialogViewModel viewModel = new(Request(x => x), messages);
+            OffsetDialogViewModel viewModel = new(Request(x => x), messages, TestServices.Localizer());
 
             viewModel.XText = "abc";
             viewModel.WizardCommand.Execute(null);
@@ -81,7 +81,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void OkStoresTheResultAndRequestsClose()
         {
-            OffsetDialogViewModel viewModel = new(Request(x => x), new FakeDialogService());
+            OffsetDialogViewModel viewModel = new(Request(x => x), new FakeDialogService(), TestServices.Localizer());
             List<Boolean> closed = [];
             viewModel.CloseRequested += (_, accepted) => closed.Add(accepted);
 
@@ -101,7 +101,7 @@ namespace FrameAnimator.App.Tests
         public void OkWithAnInvalidValueWarnsAndStaysOpen(String x, String y)
         {
             FakeDialogService messages = new();
-            OffsetDialogViewModel viewModel = new(Request(v => v), messages);
+            OffsetDialogViewModel viewModel = new(Request(v => v), messages, TestServices.Localizer());
             Boolean closed = false;
             viewModel.CloseRequested += (_, _) => closed = true;
 

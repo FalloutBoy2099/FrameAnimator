@@ -28,6 +28,24 @@ namespace FrameAnimator.Core.Services
         /// </summary>
         public Boolean ConfirmPaletteOnOpen { get; set; } = true;
 
+        /// <summary>
+        /// <c>false</c> (default, as the original): <see cref="SaveProject"/> writes the paths of the frame images, palette,
+        /// background and FRM as they are (absolute). <c>true</c>: paths under the same drive are written relative to the folder of
+        /// the project file, so that the project and its images can be moved or shared together. Reading always understands both.
+        /// </summary>
+        public Boolean SaveRelativePaths { get; set; }
+
+        private String _cleanSignature = project.ContentSignature();
+
+        /// <summary>
+        /// The project differs from what was loaded or last saved (a new project that was not touched is not modified). Detected by
+        /// comparing <see cref="Model.Project.ContentSignature"/>, so every way of editing is covered.
+        /// </summary>
+        public Boolean IsModified => Project.ContentSignature() != _cleanSignature;
+
+        /// <summary>Takes the current content as the reference of <see cref="IsModified"/> (done after a new project, a load and a save).</summary>
+        public void MarkClean() => _cleanSignature = Project.ContentSignature();
+
         /// <summary>Raised after any operation that modifies the project (to refresh a UI).</summary>
         public event EventHandler? Changed;
 
@@ -48,6 +66,7 @@ namespace FrameAnimator.Core.Services
             Project.Palette.FileName = "";
             String actPath = Path.Combine(AppDirectory, "Default.act");
             Boolean ok = !File.Exists(actPath) || LoadPalette(actPath);
+            MarkClean();
             RaiseChanged();
             return ok;
         }
@@ -65,11 +84,11 @@ namespace FrameAnimator.Core.Services
             }
             catch (UnknownPaletteTypeException e)
             {
-                UI.ShowError(e.Message);
+                UI.ShowError(e.Detail);
             }
             catch (PaletteLoadException e)
             {
-                UI.ShowError(e.Message);
+                UI.ShowError(e.Detail);
             }
             return false;
         }
@@ -88,7 +107,7 @@ namespace FrameAnimator.Core.Services
             {
                 Project.Background = null;
                 Project.BackgroundFile = "";
-                UI.ShowError($"Unable to load background '{Name(path)}'!");
+                UI.ShowError(CoreMessages.UnableToLoadBackground, Name(path));
                 return false;
             }
         }
@@ -134,14 +153,14 @@ namespace FrameAnimator.Core.Services
                             break;
                         }
                     default:
-                        UI.ShowError($"Unknown frame type '*{rawExt}'!");
+                        UI.ShowError(CoreMessages.UnknownFrameType, rawExt);
                         return null;
                 }
             }
             catch (Exception e) when (e is IOException or ImageFormatException or UnauthorizedAccessException or InvalidDataException or ArgumentException or IndexOutOfRangeException)
             {
                 String label = ext == ".GIF" && current >= 0 ? $"{Name(path)}[{current}]" : Name(path);
-                UI.ShowError($"Unable to load frame '{label}'!");
+                UI.ShowError(CoreMessages.UnableToLoadFrame, label);
                 RaiseChanged();
                 return null;
             }
@@ -179,6 +198,55 @@ namespace FrameAnimator.Core.Services
         /// <summary>Parses an integer like the VCL's <c>StrToInt</c> (decimal, <c>0x…</c> or <c>$…</c>). Throws <see cref="FormatException"/>.</summary>
         public static Int32 ParseInt(String s) => ToInt(s);
 
+        /// <summary>Folder of a project file (absolute); the stored paths are relative to it.</summary>
+        private static String ProjectDirectory(String projectPath)
+            => Path.GetDirectoryName(Path.GetFullPath(projectPath)) ?? "";
+
+        /// <summary>
+        /// Path stored in a project file to a usable path. A relative path is relative to the project folder (or, if nothing is
+        /// there, to the current folder as in the original). An absolute path that
+        /// does not exist (the project was moved or copied) is looked for by file name in the project folder; when nothing is found the
+        /// stored path is kept, so that the usual "unable to load" error names it.
+        /// </summary>
+        internal static String ResolveStoredPath(String stored, String projectDirectory)
+        {
+            if (stored.Length == 0 || projectDirectory.Length == 0)
+                return stored;
+            try
+            {
+                if (!Path.IsPathRooted(stored))
+                {
+                    // relative to the project folder; failing that it keeps its old meaning (relative to the current folder)
+                    String relative = Path.GetFullPath(Path.Combine(projectDirectory, stored));
+                    return File.Exists(relative) ? relative : stored;
+                }
+                if (File.Exists(stored))
+                    return stored;
+                String beside = Path.Combine(projectDirectory, Path.GetFileName(stored));
+                return File.Exists(beside) ? beside : stored;
+            }
+            catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                return stored;
+            }
+        }
+
+        /// <summary>Path to write in a project file: relative to the project folder when <see cref="SaveRelativePaths"/> is set and possible.</summary>
+        internal String ToStoredPath(String path, String projectDirectory)
+        {
+            if (!SaveRelativePaths || path.Length == 0 || projectDirectory.Length == 0 || !Path.IsPathRooted(path))
+                return path;
+            try
+            {
+                // across drives (or UNC roots) GetRelativePath returns the path unchanged: it stays absolute
+                return Path.GetRelativePath(projectDirectory, path);
+            }
+            catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                return path;
+            }
+        }
+
         /// <summary><c>LoadProject</c> (0x4048ec): loads an .FPR file.</summary>
         public Boolean LoadProject(String path)
         {
@@ -186,6 +254,7 @@ namespace FrameAnimator.Core.Services
             try
             {
                 var kv = KeyValueList.Parse(AnsiText.ReadFile(path));
+                String projectDirectory = ProjectDirectory(path);
 
                 Project.Settings.SampleColor = ToInt(kv["TransparentColor"]);
                 Project.Settings.TransparentMode = (TransparentMode)(Byte)ToInt(kv["TransparentColorMode"]);
@@ -194,15 +263,15 @@ namespace FrameAnimator.Core.Services
                 Project.Settings.Fps = (UInt16)ToInt(kv["FPS"]);
                 Project.Settings.ActionFrame = (UInt16)ToInt(kv["ActionFrame"]);
 
-                String pal = kv["Pallete"];
+                String pal = ResolveStoredPath(kv["Pallete"], projectDirectory);
                 if (pal.Length > 0 && !LoadPalette(pal))
                     ContinueOrAbort(path);
 
-                String bg = kv["Background"];
+                String bg = ResolveStoredPath(kv["Background"], projectDirectory);
                 if (bg.Length > 0 && !LoadBackground(bg))
                     ContinueOrAbort(path);
 
-                Project.FrmFile = kv["FRM"];
+                Project.FrmFile = ResolveStoredPath(kv["FRM"], projectDirectory);
 
                 for (Int32 d = 0; d < Project.DirectionCount; d++)
                 {
@@ -218,7 +287,7 @@ namespace FrameAnimator.Core.Services
                         String line = kv[$"Frame({d},{f})"];
                         if (line.Length == 0)
                             break;
-                        String file = Csv.Field(line, 2);
+                        String file = ResolveStoredPath(Csv.Field(line, 2), projectDirectory);
                         String idxText = Csv.Field(line, 3);
                         Int32 gifIndex = idxText.Length > 0 ? ToInt(idxText) : -1;
                         var frame = LoadFrameFile(dir, file, gifIndex);
@@ -241,12 +310,13 @@ namespace FrameAnimator.Core.Services
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or FormatException or ArgumentException)
             {
-                UI.ShowError($"Unable to load project '{Name(path)}'!");
+                UI.ShowError(CoreMessages.UnableToLoadProject, Name(path));
             }
             finally
             {
                 UI.Progress(0, 0);
                 Project.CurrentDirection = 0;
+                MarkClean();
                 RaiseChanged();
             }
             return ok;
@@ -254,7 +324,7 @@ namespace FrameAnimator.Core.Services
 
         private void ContinueOrAbort(String projectPath)
         {
-            if (!UI.Confirm($"Continue loading project '{Name(projectPath)}'?"))
+            if (!UI.Confirm(CoreMessages.ContinueLoadingProject, Name(projectPath)))
                 throw new OperationAbortedException();
         }
 
@@ -322,15 +392,16 @@ namespace FrameAnimator.Core.Services
 
                 var kv = new KeyValueList();
                 var s = Project.Settings;
+                String projectDirectory = ProjectDirectory(path);
                 kv.Add("TransparentColor", s.SampleColor.ToString(CultureInfo.InvariantCulture));
                 kv.Add("TransparentColorMode", ((Int32)s.TransparentMode).ToString(CultureInfo.InvariantCulture));
                 kv.Add("AutoCutting", s.AutoCutting ? "1" : "0");
                 kv.Add("DitheringMethod", ((Int32)s.DitherMethod).ToString(CultureInfo.InvariantCulture));
                 kv.Add("FPS", s.Fps.ToString(CultureInfo.InvariantCulture));
                 kv.Add("ActionFrame", s.ActionFrame.ToString(CultureInfo.InvariantCulture));
-                kv.Add("Pallete", Project.PaletteFile);
-                kv.Add("Background", Project.BackgroundFile);
-                kv.Add("FRM", Project.FrmFile);
+                kv.Add("Pallete", ToStoredPath(Project.PaletteFile, projectDirectory));
+                kv.Add("Background", ToStoredPath(Project.BackgroundFile, projectDirectory));
+                kv.Add("FRM", ToStoredPath(Project.FrmFile, projectDirectory));
                 for (Int32 d = 0; d < Project.DirectionCount; d++)
                 {
                     var dir = Project.Directions[d];
@@ -339,11 +410,12 @@ namespace FrameAnimator.Core.Services
                     {
                         var fr = dir.Frames[f];
                         String index = fr.HasSourceIndex ? "," + fr.SourceIndex.ToString(CultureInfo.InvariantCulture) : "";
-                        kv.Add($"Frame({d},{f})", $"{fr.OffsetX},{fr.OffsetY},{fr.FileName}{index}");
+                        kv.Add($"Frame({d},{f})", $"{fr.OffsetX},{fr.OffsetY},{ToStoredPath(fr.FileName, projectDirectory)}{index}");
                     }
                 }
                 AnsiText.WriteFile(path, kv.ToString());
                 SetProjectFile(path);
+                MarkClean();
                 ok = true;
             }
             catch (OperationAbortedException)
@@ -351,7 +423,7 @@ namespace FrameAnimator.Core.Services
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
-                UI.ShowError($"Unable to write project '{Name(path)}'!");
+                UI.ShowError(CoreMessages.UnableToWriteProject, Name(path));
             }
             finally
             {
@@ -381,7 +453,7 @@ namespace FrameAnimator.Core.Services
                 {
                     if (!File.Exists(path) || new FileInfo(path).Length < FrmFormat.HeaderSize)
                     {
-                        UI.ShowError($"Unable to load FRM '{Name(path)}'!");
+                        UI.ShowError(CoreMessages.UnableToLoadFrm, Name(path));
                         return false;
                     }
                     using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -396,7 +468,7 @@ namespace FrameAnimator.Core.Services
                         String file = Path.ChangeExtension(path, ".FR" + d);
                         if (!File.Exists(file) || new FileInfo(file).Length < FrmFormat.HeaderSize)
                         {
-                            UI.ShowError($"Unable to load FRM '{Name(file)}'!");
+                            UI.ShowError(CoreMessages.UnableToLoadFrm, Name(file));
                             continue;
                         }
                         using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -407,16 +479,18 @@ namespace FrameAnimator.Core.Services
                 }
                 else
                 {
-                    UI.ShowError($"Unknown FRM type '*{rawExt}'!");
+                    UI.ShowError(CoreMessages.UnknownFrmType, rawExt);
                 }
             }
             catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or OverflowException)
             {
-                UI.ShowError($"Unable to load FRM '{Name(path)}'!");
+                UI.ShowError(CoreMessages.UnableToLoadFrm, Name(path));
             }
             finally
             {
                 UI.Progress(0, 0);
+                if (ok)
+                    MarkClean();
                 RaiseChanged();
             }
             return ok;
@@ -470,7 +544,7 @@ namespace FrameAnimator.Core.Services
         {
             if (Project.Settings.DitherMethod == DitherMethod.Fallout && Project.Palette.FalloutTable is null)
             {
-                UI.ShowError($"Invalid palette type for dithering method 'Fallout'\nUnable to write FRM '{Name(path)}'!");
+                UI.ShowError(UserMessage.Lines(new UserMessage(CoreMessages.InvalidPaletteForFallout), new UserMessage(CoreMessages.UnableToWriteFrm, Name(path))));
                 return false;
             }
 
@@ -482,7 +556,7 @@ namespace FrameAnimator.Core.Services
             {
                 if (!FrmFormat.IsValidForFrm(Project))
                 {
-                    UI.ShowError($"Incomplete frames set for '{Name(path)}'!");
+                    UI.ShowError(CoreMessages.IncompleteFramesSet, Name(path));
                     return false;
                 }
                 try
@@ -493,7 +567,7 @@ namespace FrameAnimator.Core.Services
                 }
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                 {
-                    UI.ShowError($"Unable to write FRM '{Name(path)}'!");
+                    UI.ShowError(CoreMessages.UnableToWriteFrm, Name(path));
                     return false;
                 }
             }
@@ -502,7 +576,7 @@ namespace FrameAnimator.Core.Services
             {
                 if (!FrmFormat.IsValidForFrN(Project))
                 {
-                    UI.ShowError($"Incomplete frames set for '{Name(path)}'!");
+                    UI.ShowError(CoreMessages.IncompleteFramesSet, Name(path));
                     return false;
                 }
                 for (Int32 d = 0; d < Project.DirectionCount; d++)
@@ -515,7 +589,7 @@ namespace FrameAnimator.Core.Services
                     }
                     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                     {
-                        UI.ShowError($"Unable to write FRM '{Name(file)}'!");
+                        UI.ShowError(CoreMessages.UnableToWriteFrm, Name(file));
                         return false;
                     }
                     UI.Progress(d + 1, Project.DirectionCount);
@@ -524,7 +598,7 @@ namespace FrameAnimator.Core.Services
                 return true;
             }
 
-            UI.ShowError($"Unknown FRM file type '*{rawExt}'!");
+            UI.ShowError(CoreMessages.UnknownFrmFileType, rawExt);
             return false;
         }
 
@@ -546,7 +620,7 @@ namespace FrameAnimator.Core.Services
                 if (!(File.Exists(sibling) && LoadPalette(sibling)))
                 {
                     String current = String.IsNullOrEmpty(Project.PaletteFile) ? "Default.act" : Name(Project.PaletteFile);
-                    if (ConfirmPaletteOnOpen && !UI.Confirm($"Use palette '{current}'?"))
+                    if (ConfirmPaletteOnOpen && !UI.Confirm(CoreMessages.UsePalette, current))
                     {
                         String? chosen = UI.PromptPalette();
                         if (chosen is null || !LoadPalette(chosen))
@@ -556,7 +630,7 @@ namespace FrameAnimator.Core.Services
                 return LoadFrm(path);
             }
 
-            UI.ShowError($"Unknown file type '*{rawExt}'!");
+            UI.ShowError(CoreMessages.UnknownFileType, rawExt);
             return false;
         }
 

@@ -23,7 +23,7 @@ namespace FrameAnimator.App.Tests
                 ActionFrame = 2,
             };
 
-            OptionsDialogViewModel viewModel = new(settings, 5, new FakeDialogService());
+            OptionsDialogViewModel viewModel = new(settings, 5, new FakeDialogService(), TestServices.Localizer());
 
             Assert.False(viewModel.IsAutoTransparent);
             Assert.False(viewModel.IsPaletteTransparent);
@@ -42,7 +42,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void RadioButtonsFollowTheMode()
         {
-            OptionsDialogViewModel viewModel = new(new ProjectSettings(), 1, new FakeDialogService());
+            OptionsDialogViewModel viewModel = new(new ProjectSettings(), 1, new FakeDialogService(), TestServices.Localizer());
             List<String?> changed = [];
             viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -59,7 +59,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void ActionFramesHaveASingleEmptyItemWithoutFrames()
         {
-            OptionsDialogViewModel viewModel = new(new ProjectSettings(), 0, new FakeDialogService());
+            OptionsDialogViewModel viewModel = new(new ProjectSettings(), 0, new FakeDialogService(), TestServices.Localizer());
 
             Assert.Equal([""], viewModel.ActionFrames);
             Assert.Equal(0, viewModel.ActionIndex);
@@ -68,7 +68,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void ActionFrameIsClampedToTheLastFrame()
         {
-            OptionsDialogViewModel viewModel = new(new ProjectSettings { ActionFrame = 9 }, 3, new FakeDialogService());
+            OptionsDialogViewModel viewModel = new(new ProjectSettings { ActionFrame = 9 }, 3, new FakeDialogService(), TestServices.Localizer());
 
             Assert.Equal(2, viewModel.ActionIndex);
         }
@@ -77,7 +77,7 @@ namespace FrameAnimator.App.Tests
         public void OkWritesTheSettingsAndRequestsClose()
         {
             ProjectSettings settings = new();
-            OptionsDialogViewModel viewModel = new(settings, 4, new FakeDialogService());
+            OptionsDialogViewModel viewModel = new(settings, 4, new FakeDialogService(), TestServices.Localizer());
             List<Boolean> closed = [];
             viewModel.CloseRequested += (_, accepted) => closed.Add(accepted);
 
@@ -106,7 +106,7 @@ namespace FrameAnimator.App.Tests
         public void OkKeepsTheActionFrameWhenThereIsNoFrame()
         {
             ProjectSettings settings = new() { ActionFrame = 7 };
-            OptionsDialogViewModel viewModel = new(settings, 0, new FakeDialogService());
+            OptionsDialogViewModel viewModel = new(settings, 0, new FakeDialogService(), TestServices.Localizer());
 
             viewModel.OkCommand.Execute(null);
 
@@ -123,7 +123,7 @@ namespace FrameAnimator.App.Tests
         {
             ProjectSettings settings = new() { Fps = 5, GhostIncrement = -1 };
             FakeDialogService messages = new();
-            OptionsDialogViewModel viewModel = new(settings, 2, messages);
+            OptionsDialogViewModel viewModel = new(settings, 2, messages, TestServices.Localizer());
             Boolean closed = false;
             viewModel.CloseRequested += (_, _) => closed = true;
 

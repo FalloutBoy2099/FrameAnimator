@@ -143,5 +143,20 @@
   "Palette": "調色盤",
   "Fallout Palette": "Fallout 調色盤",
   "Action Script": "動作指令碼",
-  "Background": "背景"
+  "Background": "背景",
+  "Relative pa_ths": "相對路徑(_T)",
+  "Write the paths of the project file relative to its folder": "以專案檔所在資料夾為基準，寫入相對路徑",
+  "Animation pre_view": "動畫預覽(_V)",
+  "Animation preview": "動畫預覽",
+  "Previous frame": "上一個影格",
+  "Next frame": "下一個影格",
+  "Play": "播放",
+  "Pause": "暫停",
+  "No frames": "沒有影格",
+  "Frame {0}/{1} - {2} fps": "影格 {0}/{1} - {2} fps",
+  "Save changes to '{0}'?": "要儲存「{0}」的變更嗎？",
+  "Recent _projects": "最近的專案(_R)",
+  "Clear list": "清除清單",
+  "Drag the frame, or use the arrow keys (Shift: 10 pixels, Ctrl: following frames too)": "拖曳影格，或使用方向鍵（Shift：10 像素，Ctrl：連同後續影格）",
+  "Click a pixel to use its color as the sample": "點選像素，以其顏色作為樣本"
 }

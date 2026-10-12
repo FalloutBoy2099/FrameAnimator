@@ -25,7 +25,7 @@ namespace FrameAnimator.Core.Formats
         public const Int32 HeaderSize = 62;
 
         /// <summary>Maximum number of pixels accepted for a frame being read (16 Mpx, far beyond any game image).</summary>
-        public const Int32 MaxFramePixels = 16 * 1024 * 1024;
+        public const Int32 MaxFramePixels = Imaging.ImageLimits.MaxPixels;
         public const Int32 FrameHeaderSize = 12;
 
         // ------------------------------------------------------------------ validation

@@ -143,5 +143,20 @@
   "Palette": "Палитра",
   "Fallout Palette": "Палитра Fallout",
   "Action Script": "Скрипт действий",
-  "Background": "Фон"
+  "Background": "Фон",
+  "Relative pa_ths": "Относительные пу_ти",
+  "Write the paths of the project file relative to its folder": "Записывать пути в файле проекта относительно его папки",
+  "Animation pre_view": "Предпросмотр ан_имации",
+  "Animation preview": "Предпросмотр анимации",
+  "Previous frame": "Предыдущий кадр",
+  "Next frame": "Следующий кадр",
+  "Play": "Воспроизвести",
+  "Pause": "Пауза",
+  "No frames": "Нет кадров",
+  "Frame {0}/{1} - {2} fps": "Кадр {0}/{1} - {2} кадр/с",
+  "Save changes to '{0}'?": "Сохранить изменения в «{0}»?",
+  "Recent _projects": "Недавние _проекты",
+  "Clear list": "Очистить список",
+  "Drag the frame, or use the arrow keys (Shift: 10 pixels, Ctrl: following frames too)": "Перетащите кадр или используйте стрелки (Shift: 10 пикселей, Ctrl: и следующие кадры)",
+  "Click a pixel to use its color as the sample": "Щёлкните пиксель, чтобы использовать его цвет как образец"
 }

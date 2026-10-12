@@ -61,6 +61,35 @@ namespace FrameAnimator.Core.Tests
         }
 
         [Fact]
+        public void ACancelRequestStopsTheScriptBetweenTwoLines()
+        {
+            using var dir = new TempDir();
+            MakeImages(dir, 2);
+            var p = Samples.NewProject(out var ui, out var svc);
+            String script = Script(dir, "ADD_FRAMES,0," + dir.File("img0.bmp"), "ADD_FRAMES,0," + dir.File("img1.bmp"));
+            // the user asks to stop while the first line runs: the second one never starts
+            svc.Changed += (_, _) => ui.CancelRequested = true;
+
+            var runner = new ScriptRunner(svc) { ChangeCurrentDirectory = false };
+
+            Assert.False(runner.Run(script));
+            Assert.Equal(1, p.Directions[0].Count);
+            Assert.Empty(ui.Errors);
+        }
+
+        [Fact]
+        public void ANonCancelledScriptRunsEveryLine()
+        {
+            using var dir = new TempDir();
+            MakeImages(dir, 2);
+            var p = Samples.NewProject(out var ui, out var svc);
+            String script = Script(dir, "ADD_FRAMES,0," + dir.File("img0.bmp"), "ADD_FRAMES,0," + dir.File("img1.bmp"));
+
+            Assert.True(new ScriptRunner(svc) { ChangeCurrentDirectory = false }.Run(script), String.Join("|", ui.Errors));
+            Assert.Equal(2, p.Directions[0].Count);
+        }
+
+        [Fact]
         public void SetFrameOffsetIsRelativeAndInheritPropagates()
         {
             using var dir = new TempDir();

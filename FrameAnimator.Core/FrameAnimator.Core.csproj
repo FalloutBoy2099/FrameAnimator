@@ -16,6 +16,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Translations of the core messages (key = English format string), shared by the interface and the console mode. -->
+        <EmbeddedResource Include="Messages\*.json" LogicalName="FrameAnimator.Core.Messages.%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
         <InternalsVisibleTo Include="FrameAnimator.Core.Tests" />
     </ItemGroup>
 

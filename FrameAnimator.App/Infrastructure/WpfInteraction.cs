@@ -2,13 +2,14 @@ namespace FrameAnimator.App.Infrastructure
 {
     using System;
     using System.Windows.Threading;
+    using FrameAnimator.App.Localization;
     using FrameAnimator.Core.Services;
 
     /// <summary>
     /// The application's <see cref="IUserInteraction"/>: messages, questions and file dialogs, usable from
     /// any thread (calls are marshaled to the UI thread).
     /// </summary>
-    public sealed class WpfInteraction(Dispatcher dispatcher, IDialogService dialogs) : IUserInteraction
+    public sealed class WpfInteraction(Dispatcher dispatcher, IDialogService dialogs, ILocalizer localizer) : IUserInteraction
     {
         private volatile Boolean _cancelRequested;
 
@@ -28,13 +29,13 @@ namespace FrameAnimator.App.Infrastructure
             return dispatcher.Invoke(action);
         }
 
-        public void ShowError(String message) => OnUi(() =>
+        public void ShowError(UserMessage message) => OnUi(() =>
         {
-            dialogs.ShowWarning(message);
+            dialogs.ShowWarning(message.Render(localizer.T));
             return 0;
         });
 
-        public Boolean Confirm(String message) => OnUi(() => dialogs.AskYesNo(message));
+        public Boolean Confirm(UserMessage message) => OnUi(() => dialogs.AskYesNo(message.Render(localizer.T)));
 
         public String? PromptSaveFramesAs(String suggestedName) => OnUi(() =>
             dialogs.SaveFile("Save Frames As", "BMP (*.BMP)|*.BMP|PNG (*.PNG)|*.PNG|CompuServe GIF (*.GIF)|*.GIF", 1,

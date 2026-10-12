@@ -18,9 +18,10 @@ namespace FrameAnimator.App.Infrastructure
             var height = Math.Max(1, bmp.Height);
             var data = new Byte[width * height * 4];
             var key = transparent < 0 ? -1 : (transparent | orMask) & 0xFFFFFF;
-            for (var i = 0; i < bmp.Pixels.Length; i++)
+            var pixels = bmp.Pixels;
+            for (var i = 0; i < pixels.Length; i++)
             {
-                var c = (bmp.Pixels[i] & 0xFFFFFF) | orMask;
+                var c = (pixels[i] & 0xFFFFFF) | orMask;
                 var o = i * 4;
                 if (c == key)
                     continue; // bytes left at 0: fully transparent

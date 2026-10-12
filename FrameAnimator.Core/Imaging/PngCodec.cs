@@ -18,7 +18,24 @@ namespace FrameAnimator.Core.Imaging
 
         public static Bitmap32 ReadFile(String path) => Read(File.ReadAllBytes(path));
 
+        /// <summary>
+        /// Decodes a PNG file. The IHDR is validated against <see cref="ImageLimits"/> before anything is allocated, the inflated
+        /// data is never allowed to exceed what the IHDR declares, and any failure on corrupt data is reported as an
+        /// <see cref="ImageFormatException"/>.
+        /// </summary>
         public static Bitmap32 Read(Byte[] data)
+        {
+            try
+            {
+                return ReadCore(data);
+            }
+            catch (Exception e) when (e is not ImageFormatException and not OutOfMemoryException)
+            {
+                throw new ImageFormatException("The \"Portable Network Graphics\" image is corrupt: " + e.Message, e);
+            }
+        }
+
+        private static Bitmap32 ReadCore(Byte[] data)
         {
             if (data.Length < 8 || !data.AsSpan(0, 8).SequenceEqual(Signature))
                 throw new ImageFormatException("The file being readed is not a valid \"Portable Network Graphics\" image because it contains an invalid header.");
@@ -46,13 +63,23 @@ namespace FrameAnimator.Core.Imaging
                     case "IHDR":
                         if (len < 13)
                             throw new ImageFormatException("IHDR corrupted.");
-                        width = (Int32)BinaryPrimitives.ReadUInt32BigEndian(body);
-                        height = (Int32)BinaryPrimitives.ReadUInt32BigEndian(body[4..]);
-                        bitDepth = body[8];
-                        colorType = body[9];
-                        interlace = body[12];
-                        sawHeader = true;
-                        break;
+                        {
+                            // validated right away, before any IDAT is accumulated or any buffer allocated
+                            UInt32 w32 = BinaryPrimitives.ReadUInt32BigEndian(body), h32 = BinaryPrimitives.ReadUInt32BigEndian(body[4..]);
+                            if (!ImageLimits.IsValidSize(w32, h32))
+                                throw new ImageFormatException("Invalid PNG size.");
+                            width = (Int32)w32;
+                            height = (Int32)h32;
+                            bitDepth = body[8];
+                            colorType = body[9];
+                            interlace = body[12];
+                            if (!IsValidDepth(colorType, bitDepth))
+                                throw new ImageFormatException("Unsupported PNG color type or bit depth.");
+                            if (interlace > 1)
+                                throw new ImageFormatException("Unsupported PNG interlace method.");
+                            sawHeader = true;
+                            break;
+                        }
                     case "PLTE":
                         plte = body.ToArray();
                         break;
@@ -68,8 +95,6 @@ namespace FrameAnimator.Core.Imaging
             }
             if (!sawHeader)
                 throw new ImageFormatException("IHDR chunk is not the first.");
-            if (width <= 0 || height <= 0 || width > 65535 || height > 65535)
-                throw new ImageFormatException("Invalid PNG size.");
             if (idat.Length == 0)
                 throw new ImageFormatException("This \"Portable Network Graphics\" image contains no data.");
 
@@ -78,19 +103,35 @@ namespace FrameAnimator.Core.Imaging
                 throw new ImageFormatException("This \"Portable Network Graphics\" could not be loaded because it uses a color table which is missing.");
             Int32 bitsPerPixel = channels * bitDepth;
 
+            // exact size of the inflated data (filter bytes included) for the declared image: the inflate output must match it
+            Int64 expected = ExpectedRawSize(width, height, bitsPerPixel, interlace != 0);
+
             idat.Position = 0;
             Byte[] raw;
             try
             {
                 using var z = new ZLibStream(idat, CompressionMode.Decompress);
                 using var outMs = new MemoryStream();
-                z.CopyTo(outMs);
+                var chunk = new Byte[65536];
+                Int64 total = 0;
+                Int32 n;
+                while ((n = z.Read(chunk, 0, chunk.Length)) > 0)
+                {
+                    total += n;
+                    if (total > expected)
+                        throw new ImageFormatException("The \"Portable Network Graphics\" image inflates to more data than its header declares (decompression bomb).");
+                    outMs.Write(chunk, 0, n);
+                }
                 raw = outMs.ToArray();
             }
             catch (InvalidDataException e)
             {
                 throw new ImageFormatException("Could not decompress the image because it contains invalid compressed data. " + e.Message);
             }
+
+            // incomplete pixel data: reported before the pixel buffer is allocated
+            if (raw.Length < expected)
+                throw new ImageFormatException("Premature end of PNG data.");
 
             var bmp = new Bitmap32(width, height);
             Int32 rawPos = 0;
@@ -129,6 +170,29 @@ namespace FrameAnimator.Core.Imaging
                     DecodePass(px, py, dx, dy, (width - px + dx - 1) / dx, (height - py + dy - 1) / dy);
             }
             return bmp;
+        }
+
+        /// <summary>Bit depths allowed by the PNG specification for each color type.</summary>
+        private static Boolean IsValidDepth(Int32 colorType, Int32 bitDepth) => colorType switch
+        {
+            0 => bitDepth is 1 or 2 or 4 or 8 or 16,
+            3 => bitDepth is 1 or 2 or 4 or 8,
+            2 or 4 or 6 => bitDepth is 8 or 16,
+            _ => false,
+        };
+
+        /// <summary>Size of the inflated image data (one filter byte per scanline included), computed in 64 bits.</summary>
+        private static Int64 ExpectedRawSize(Int32 width, Int32 height, Int32 bitsPerPixel, Boolean interlaced)
+        {
+            static Int64 Pass(Int64 pw, Int64 ph, Int32 bitsPerPixel) => pw == 0 || ph == 0 ? 0 : ph * (1 + (pw * bitsPerPixel + 7) / 8);
+
+            if (!interlaced)
+                return Pass(width, height, bitsPerPixel);
+            ReadOnlySpan<(Int32 X, Int32 Y, Int32 Dx, Int32 Dy)> passes = [(0, 0, 8, 8), (4, 0, 8, 8), (0, 4, 4, 8), (2, 0, 4, 4), (0, 2, 2, 4), (1, 0, 2, 2), (0, 1, 1, 2)];
+            Int64 sum = 0;
+            foreach (var (px, py, dx, dy) in passes)
+                sum += Pass((width - px + dx - 1) / dx, (height - py + dy - 1) / dy, bitsPerPixel);
+            return sum;
         }
 
         private static void Unfilter(Int32 filter, Byte[] cur, Byte[] prev, Int32 bpp)

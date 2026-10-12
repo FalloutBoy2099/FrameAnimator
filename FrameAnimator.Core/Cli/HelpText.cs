@@ -72,6 +72,7 @@ namespace FrameAnimator.Core.Cli
           /palette:<file>         palette (.act, .pal) for FRM sources
                                   (default: the .pal next to the FRM, else Default.act)
           /frames:<BMP|PNG|GIF>   format of the frame images written with a project (default BMP)
+          /relative               write the paths of a project (.fpr) relative to its folder
           /continue               go on after an error (default: stop at the first one)
           /quiet                  only print errors
 
@@ -93,6 +94,7 @@ namespace FrameAnimator.Core.Cli
           /palette:<fichier>      palette (.act, .pal) pour les sources FRM
                                   (défaut : le .pal à côté du FRM, sinon Default.act)
           /frames:<BMP|PNG|GIF>   format des images de frames écrites avec un projet (défaut BMP)
+          /relative               écrire les chemins d'un projet (.fpr) relativement à son dossier
           /continue               poursuivre après une erreur (défaut : s'arrêter à la première)
           /quiet                  n'afficher que les erreurs
 
@@ -133,6 +135,7 @@ namespace FrameAnimator.Core.Cli
           /palette:<file>         palette to load first (used by an FRM given with /open)
           /frames:<BMP|PNG|GIF>   format of the frame images written when a project made from an FRM is saved
                                   (default BMP)
+          /relative               write the paths of a project (.fpr) relative to its folder
           /continue               go on after an error in the script (default: stop at the first one)
           /quiet                  only print errors
 
@@ -172,6 +175,7 @@ namespace FrameAnimator.Core.Cli
           /palette:<fichier>      palette à charger d'abord (utilisée par un FRM donné avec /open)
           /frames:<BMP|PNG|GIF>   format des images de frames écrites quand on enregistre un projet issu d'un FRM
                                   (défaut BMP)
+          /relative               écrire les chemins d'un projet (.fpr) relativement à son dossier
           /continue               poursuivre après une erreur du script (défaut : s'arrêter à la première)
           /quiet                  n'afficher que les erreurs
 
@@ -194,6 +198,7 @@ namespace FrameAnimator.Core.Cli
           /palette:<file>         palette used for FRM sources
           /script:<file>          FAS script executed on each source before saving
           /frames:<BMP|PNG|GIF>   format of the frame images written with a project (default BMP)
+          /relative               write the paths of a project (.fpr) relative to its folder
           /continue               go on after an error (default: stop at the first one)
           /quiet                  only print errors
 
@@ -216,6 +221,7 @@ namespace FrameAnimator.Core.Cli
           /palette:<fichier>      palette utilisée pour les sources FRM
           /script:<fichier>       script FAS exécuté sur chaque source avant l'enregistrement
           /frames:<BMP|PNG|GIF>   format des images de frames écrites avec un projet (défaut BMP)
+          /relative               écrire les chemins d'un projet (.fpr) relativement à son dossier
           /continue               poursuivre après une erreur (défaut : s'arrêter à la première)
           /quiet                  n'afficher que les erreurs
 

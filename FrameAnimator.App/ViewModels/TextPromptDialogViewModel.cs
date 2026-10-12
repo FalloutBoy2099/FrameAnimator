@@ -8,10 +8,10 @@ namespace FrameAnimator.App.ViewModels
     /// <summary>View model of the small dialog that asks for a line of text (for example the name of a new folder).</summary>
     public sealed partial class TextPromptDialogViewModel : DialogViewModelBase
     {
-        public TextPromptDialogViewModel(String title, String prompt, String initial)
+        public TextPromptDialogViewModel(ILocalizer localizer, String title, String prompt, String initial)
         {
-            Title = Localizer.T(title);
-            Prompt = Localizer.T(prompt);
+            Title = localizer.T(title);
+            Prompt = localizer.T(prompt);
             Text = initial;
         }
 

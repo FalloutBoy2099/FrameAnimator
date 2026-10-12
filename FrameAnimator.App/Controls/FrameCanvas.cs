@@ -3,13 +3,16 @@ namespace FrameAnimator.App.Controls
     using System;
     using System.Windows;
     using System.Windows.Input;
+    using CommunityToolkit.Mvvm.DependencyInjection;
+    using CommunityToolkit.Mvvm.Messaging;
+    using Microsoft.Win32;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
     using FrameAnimator.Core.Geometry;
     using FrameAnimator.Core.Model;
 	using Infrastructure;
+	using Services;
 	using ViewModels;
-	using Views;
 
 	/// <summary>
 	/// Drawing area (<c>pbxFramePaint</c>, specification §6.2): background, "hexes" tile, ghost frame, then the selected frame,
@@ -17,10 +20,19 @@ namespace FrameAnimator.App.Controls
 	/// </summary>
 	public sealed class FrameCanvas : FrameworkElement
     {
-        private MainViewModel? _vm;
-        private BitmapSource? _hexes;
-        private Bitmap32? _backgroundSource;
-        private BitmapSource? _backgroundImage;
+        private static readonly Brush LightBackground = CreateBrush(Color.FromRgb(0xF3, 0xF3, 0xF3));
+        private static readonly Brush DarkBackground = CreateBrush(Color.FromRgb(0x20, 0x20, 0x20));
+
+        // the "hexes" tile is the same for every canvas: decoded once
+        private static BitmapSource? s_hexes;
+        private static Boolean s_hexesLoaded;
+
+        private CanvasViewModel? _vm;
+        private Boolean _themeKnown;
+        private Boolean _dark;
+        private Boolean _themeSubscribed;
+        private Transform? _scale;
+        private Int32 _scaleZoom;
 
         public FrameCanvas()
         {
@@ -29,14 +41,38 @@ namespace FrameAnimator.App.Controls
             RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.NearestNeighbor);
             RenderOptions.SetEdgeMode(this, EdgeMode.Aliased);
             DataContextChanged += (_, _) => Attach();
-            Loaded += (_, _) => Attach();
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+        }
+
+        private static Brush CreateBrush(Color color)
+        {
+            var brush = new SolidColorBrush(color);
+            brush.Freeze();
+            return brush;
+        }
+
+        private void OnLoaded(Object sender, RoutedEventArgs e)
+        {
+            SubscribeTheme();
+            Attach();
+        }
+
+        private void OnUnloaded(Object sender, RoutedEventArgs e)
+        {
+            UnsubscribeTheme();
+            if (_vm is not null)
+            {
+                _vm.RenderRequested -= OnRenderRequested;
+                _vm = null;
+            }
         }
 
         private void Attach()
         {
             if (_vm is not null)
                 _vm.RenderRequested -= OnRenderRequested;
-            _vm = DataContext as MainViewModel;
+            _vm = DataContext as CanvasViewModel;
             if (_vm is not null)
                 _vm.RenderRequested += OnRenderRequested;
             InvalidateVisual();
@@ -44,10 +80,56 @@ namespace FrameAnimator.App.Controls
 
         private void OnRenderRequested(Object? sender, EventArgs e) => InvalidateVisual();
 
-        private BitmapSource? Hexes()
+        // ------------------------------------------------------------------ theme
+
+        private void SubscribeTheme()
         {
-            if (_hexes is not null)
-                return _hexes;
+            if (_themeSubscribed)
+                return;
+            _themeSubscribed = true;
+            WeakReferenceMessenger.Default.Register<FrameCanvas, ThemeChangedMessage>(this, static (canvas, _) => canvas.RefreshTheme());
+            SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
+            // the preference may have changed while the canvas was not loaded
+            RefreshTheme();
+        }
+
+        private void UnsubscribeTheme()
+        {
+            if (!_themeSubscribed)
+                return;
+            _themeSubscribed = false;
+            WeakReferenceMessenger.Default.Unregister<ThemeChangedMessage>(this);
+            SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        }
+
+        // raised on the SystemEvents thread
+        private void OnUserPreferenceChanged(Object sender, UserPreferenceChangedEventArgs e)
+        {
+            if (e.Category is UserPreferenceCategory.General or UserPreferenceCategory.Color or UserPreferenceCategory.VisualStyle)
+                Dispatcher.BeginInvoke(RefreshTheme);
+        }
+
+        /// <summary>The theme comes from the application's service (a canvas is created from XAML, it cannot receive it by constructor).</summary>
+        private static Boolean IsDarkTheme() => Ioc.Default.GetService<IThemeService>()?.IsDark ?? false;
+
+        /// <summary>Reads the theme once (registry access when the preference is Automatic) and redraws if it changed.</summary>
+        private void RefreshTheme()
+        {
+            var dark = IsDarkTheme();
+            if (_themeKnown && dark == _dark)
+                return;
+            _themeKnown = true;
+            _dark = dark;
+            InvalidateVisual();
+        }
+
+        // ------------------------------------------------------------------ drawing
+
+        private static BitmapSource? Hexes()
+        {
+            if (s_hexesLoaded)
+                return s_hexes;
+            s_hexesLoaded = true;
             try
             {
                 var decoder = new PngBitmapDecoder(new Uri("pack://application:,,,/Assets/hexes.png"),
@@ -63,21 +145,40 @@ namespace FrameAnimator.App.Controls
                     if (data[i] == 0xC0 && data[i + 1] == 0xC0 && data[i + 2] == 0xC0)
                         data[i] = data[i + 1] = data[i + 2] = data[i + 3] = 0;
                 }
-                _hexes = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, data, width * 4);
-                _hexes.Freeze();
+                var hexes = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, data, width * 4);
+                hexes.Freeze();
+                s_hexes = hexes;
             }
             catch (Exception)
             {
-                _hexes = null;
+                s_hexes = null;
             }
-            return _hexes;
+            return s_hexes;
+        }
+
+        /// <summary>Frozen zoom transform, rebuilt only when the zoom changes.</summary>
+        private Transform ScaleFor(Int32 zoom)
+        {
+            if (_scale is null || _scaleZoom != zoom)
+            {
+                var scale = new ScaleTransform(zoom, zoom);
+                scale.Freeze();
+                _scale = scale;
+                _scaleZoom = zoom;
+            }
+            return _scale;
         }
 
         protected override void OnRender(DrawingContext dc)
         {
             var w = ActualWidth;
             var h = ActualHeight;
-            dc.DrawRectangle(new SolidColorBrush(ThemeManager.IsDark() ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xF3, 0xF3, 0xF3)), null, new Rect(0, 0, w, h));
+            if (!_themeKnown)
+            {
+                _dark = IsDarkTheme();
+                _themeKnown = true;
+            }
+            dc.DrawRectangle(_dark ? DarkBackground : LightBackground, null, new Rect(0, 0, w, h));
             // during Automate, the project is modified by another thread: do not read it
             if (_vm is null || _vm.IsBusy)
                 return;
@@ -88,18 +189,14 @@ namespace FrameAnimator.App.Controls
             var ox = cx;
             var oy = cy;
 
-            dc.PushTransform(new ScaleTransform(zoom, zoom));
+            var cache = FrameBitmapCache.Shared;
+            dc.PushTransform(ScaleFor(zoom));
             try
             {
                 var project = _vm.Project;
                 if (_vm.ShowBackground && project.Background is { } bg)
                 {
-                    if (!ReferenceEquals(_backgroundSource, bg))
-                    {
-                        _backgroundSource = bg;
-                        _backgroundImage = ImageConversion.ToBitmapSource(bg, -1);
-                    }
-                    dc.DrawImage(_backgroundImage!, new Rect(ox - bg.Width / 2, oy - bg.Height / 2, bg.Width, bg.Height));
+                    dc.DrawImage(cache.Get(bg, -1), new Rect(ox - bg.Width / 2, oy - bg.Height / 2, bg.Width, bg.Height));
                 }
 
                 if (_vm.ShowHexes && Hexes() is { } hexes)
@@ -120,14 +217,14 @@ namespace FrameAnimator.App.Controls
                     var gf = dir.Frames[gi];
                     var gt = FrameMath.TransparentColor(project, gf);
                     var (gx, gy) = FrameMath.DisplayPosition(dir, gi, cx, cy);
-                    dc.DrawImage(ImageConversion.ToBitmapSource(gf.Bitmap, gt, 0xFF0000),
+                    dc.DrawImage(cache.Get(gf.Bitmap, gt, 0xFF0000),
                         new Rect(gx, gy, gf.Bitmap.Width, gf.Bitmap.Height));
                 }
 
                 var frame = dir.Frames[sel];
                 var transp = FrameMath.TransparentColor(project, frame);
                 var (fx, fy) = FrameMath.DisplayPosition(dir, sel, cx, cy);
-                dc.DrawImage(ImageConversion.ToBitmapSource(frame.Bitmap, transp),
+                dc.DrawImage(cache.Get(frame.Bitmap, transp),
                     new Rect(fx, fy, frame.Bitmap.Width, frame.Bitmap.Height));
             }
             finally
@@ -180,6 +277,29 @@ namespace FrameAnimator.App.Controls
             base.OnMouseLeftButtonUp(e);
             _vm?.CanvasMouseUp();
             ReleaseMouseCapture();
+        }
+
+        // ------------------------------------------------------------------ keyboard
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (_vm is null)
+                return;
+            (Int32 dx, Int32 dy) = e.Key switch
+            {
+                Key.Left => (-1, 0),
+                Key.Right => (1, 0),
+                Key.Up => (0, -1),
+                Key.Down => (0, 1),
+                _ => (0, 0),
+            };
+            if (dx == 0 && dy == 0)
+                return;
+            ModifierKeys modifiers = Keyboard.Modifiers;
+            Int32 step = (modifiers & ModifierKeys.Shift) != 0 ? 10 : 1;
+            if (_vm.Nudge(dx * step, dy * step, (modifiers & ModifierKeys.Control) != 0))
+                e.Handled = true;
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)

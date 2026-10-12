@@ -118,6 +118,6 @@ namespace FrameAnimator.Core.Scripting
             return completed;
         }
 
-        private Boolean StopRequested() => UI.Confirm("Stop automated routine?");
+        private Boolean StopRequested() => UI.Confirm(CoreMessages.StopAutomatedRoutine);
     }
 }

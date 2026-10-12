@@ -5,38 +5,33 @@ namespace FrameAnimator.App.Tests
     using System.IO;
     using System.Linq;
     using FrameAnimator.App.Infrastructure;
+    using FrameAnimator.App.Services;
     using FrameAnimator.App.ViewModels;
 
     /// <summary>
     /// View model of the application's file picker: filters, listing, navigation, favorites, and the open / save rules.
-    /// The settings file (last folders, favorites) is redirected to a temporary folder for the whole test.
+    /// The settings (last folders, favorites) are kept in memory, one store per test.
     /// </summary>
-    [Collection("UserSettings")]
     public sealed class FileDialogViewModelTests : IDisposable
     {
         private const String Filter = "All (*.FPR,*.FRM)|*.FPR;*.FRM|Project (*.FPR)|*.FPR|Text (*.TXT)|*.TXT";
 
-        private readonly TempDir _settings = new();
         private readonly TempDir _dir = new();
-        private readonly String? _previousOverride = UserSettings.DirectoryOverride;
+        private readonly MemorySettingsStore _settings = new();
+        private readonly FileDialogMemory _memory;
         private readonly FakeDialogService _messages = new();
 
-        public FileDialogViewModelTests() => UserSettings.DirectoryOverride = _settings.Path;
+        public FileDialogViewModelTests() => _memory = new FileDialogMemory(_settings);
 
-        public void Dispose()
-        {
-            UserSettings.DirectoryOverride = _previousOverride;
-            _settings.Dispose();
-            _dir.Dispose();
-        }
+        public void Dispose() => _dir.Dispose();
 
         private FileDialogViewModel Create(FileDialogOptions options, Func<String, String, String, String?>? prompt = null)
-            => new(options, _messages, prompt ?? ((_, _, _) => null));
+            => new(options, _messages, prompt ?? ((_, _, _) => null), TestServices.Localizer(), _memory);
 
         /// <summary>Open dialog that starts in the temporary folder.</summary>
         private FileDialogViewModel Open(Boolean multiselect = false, String filter = Filter, Int32 filterIndex = 1)
         {
-            FileDialogMemory.SetLastDirectory(save: false, _dir.Path);
+            _memory.SetLastDirectory(save: false, _dir.Path);
             return Create(FileDialogOptions.ForOpen("Open", filter, multiselect) with { FilterIndex = filterIndex });
         }
 
@@ -507,18 +502,18 @@ namespace FrameAnimator.App.Tests
             Touch("for-open/a.fpr");
             Directory.CreateDirectory(saveFolder);
 
-            FileDialogMemory.SetLastDirectory(save: false, openFolder);
+            _memory.SetLastDirectory(save: false, openFolder);
             FileDialogViewModel open = Create(FileDialogOptions.ForOpen("Open", Filter, false));
             open.NameText = "a.fpr";
             Ok(open);
 
-            FileDialogMemory.SetLastDirectory(save: true, saveFolder);
+            _memory.SetLastDirectory(save: true, saveFolder);
             FileDialogViewModel save = Create(FileDialogOptions.ForSave("Save", Filter, 1, null, "fpr", true));
             save.NameText = "out.fpr";
             Ok(save);
 
-            Assert.Equal(openFolder, FileDialogMemory.GetLastDirectory(save: false));
-            Assert.Equal(saveFolder, FileDialogMemory.GetLastDirectory(save: true));
+            Assert.Equal(openFolder, _memory.GetLastDirectory(save: false));
+            Assert.Equal(saveFolder, _memory.GetLastDirectory(save: true));
             Assert.Equal(openFolder, Create(FileDialogOptions.ForOpen("Open", Filter, false)).CurrentDirectory);
             Assert.Equal(saveFolder, Create(FileDialogOptions.ForSave("Save", Filter, 1, null, "fpr", true)).CurrentDirectory);
         }
@@ -532,8 +527,8 @@ namespace FrameAnimator.App.Tests
 
             Ok(viewModel);
 
-            Assert.Equal(_dir.File("sub"), FileDialogMemory.GetLastDirectory(save: false));
-            Assert.Null(FileDialogMemory.GetLastDirectory(save: true));
+            Assert.Equal(_dir.File("sub"), _memory.GetLastDirectory(save: false));
+            Assert.Null(_memory.GetLastDirectory(save: true));
         }
 
         // ------------------------------------------------------------------ favorites
@@ -555,7 +550,7 @@ namespace FrameAnimator.App.Tests
             Assert.Equal(Path.GetFileName(_dir.Path), favorite.Label);
             Assert.Equal("Remove from favorites", viewModel.FavoriteToolTip);
             Assert.NotEqual(emptyStar, viewModel.FavoriteGlyph);
-            Assert.Equal([_dir.Path], FileDialogMemory.GetFavorites());
+            Assert.Equal([_dir.Path], _memory.GetFavorites());
 
             viewModel.ToggleFavoriteCommand.Execute(null);
 
@@ -563,7 +558,7 @@ namespace FrameAnimator.App.Tests
             Assert.Empty(viewModel.Favorites);
             Assert.Equal("Add to favorites", viewModel.FavoriteToolTip);
             Assert.Equal(emptyStar, viewModel.FavoriteGlyph);
-            Assert.Empty(FileDialogMemory.GetFavorites());
+            Assert.Empty(_memory.GetFavorites());
         }
 
         [Fact]
@@ -603,7 +598,7 @@ namespace FrameAnimator.App.Tests
         public void AMissingFavoriteIsReportedAndNavigationStays()
         {
             String gone = _dir.File("gone");
-            UserSettings.SetAll("favorite", [gone]);
+            _settings.SetAll("favorite", [gone]);
             FileDialogViewModel viewModel = Open();
 
             viewModel.OpenFavoriteCommand.Execute(Assert.Single(viewModel.Favorites));
@@ -617,7 +612,7 @@ namespace FrameAnimator.App.Tests
         {
             Directory.CreateDirectory(_dir.File("one"));
             Directory.CreateDirectory(_dir.File("two"));
-            UserSettings.SetAll("favorite", [_dir.File("one"), _dir.File("two")]);
+            _settings.SetAll("favorite", [_dir.File("one"), _dir.File("two")]);
             FileDialogViewModel viewModel = Open();
             Assert.False(viewModel.RemoveFavoriteCommand.CanExecute(null));
 
@@ -626,7 +621,7 @@ namespace FrameAnimator.App.Tests
             viewModel.RemoveFavoriteCommand.Execute(null);
 
             Assert.Equal([_dir.File("two")], viewModel.Favorites.Select(favorite => favorite.Path));
-            Assert.Equal([_dir.File("two")], FileDialogMemory.GetFavorites());
+            Assert.Equal([_dir.File("two")], _memory.GetFavorites());
             Assert.False(viewModel.RemoveFavoriteCommand.CanExecute(null));
         }
 
@@ -641,16 +636,16 @@ namespace FrameAnimator.App.Tests
 
             viewModel.SetSelectedEntries([folder]);
             viewModel.AddToFavoritesCommand.Execute(null);
-            Assert.Equal([_dir.File("sub")], FileDialogMemory.GetFavorites());
+            Assert.Equal([_dir.File("sub")], _memory.GetFavorites());
             Assert.Equal("Remove from favorites", viewModel.FileMenuFavoriteHeader);
 
             viewModel.SetSelectedEntries([]);
             Assert.Equal("Add to favorites", viewModel.FileMenuFavoriteHeader);
             viewModel.AddToFavoritesCommand.Execute(null);
-            Assert.Equal([_dir.File("sub"), _dir.Path], FileDialogMemory.GetFavorites());
+            Assert.Equal([_dir.File("sub"), _dir.Path], _memory.GetFavorites());
 
             viewModel.AddToFavoritesCommand.Execute(null);
-            Assert.Equal([_dir.File("sub")], FileDialogMemory.GetFavorites());
+            Assert.Equal([_dir.File("sub")], _memory.GetFavorites());
         }
 
         // ------------------------------------------------------------------ new folder
@@ -659,7 +654,7 @@ namespace FrameAnimator.App.Tests
         public void NewFolderCreatesAndOpensTheFolderTheUserNamed()
         {
             List<(String Title, String Prompt, String Initial)> asked = [];
-            FileDialogMemory.SetLastDirectory(save: false, _dir.Path);
+            _memory.SetLastDirectory(save: false, _dir.Path);
             FileDialogViewModel viewModel = Create(FileDialogOptions.ForOpen("Open", Filter, false), (title, prompt, initial) =>
             {
                 asked.Add((title, prompt, initial));
@@ -677,7 +672,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void NewFolderDoesNothingWhenThePromptIsCanceled()
         {
-            FileDialogMemory.SetLastDirectory(save: false, _dir.Path);
+            _memory.SetLastDirectory(save: false, _dir.Path);
             FileDialogViewModel viewModel = Create(FileDialogOptions.ForOpen("Open", Filter, false), (_, _, _) => null);
 
             viewModel.NewFolderCommand.Execute(null);
@@ -690,7 +685,7 @@ namespace FrameAnimator.App.Tests
         [Fact]
         public void NewFolderReportsAnInvalidName()
         {
-            FileDialogMemory.SetLastDirectory(save: false, _dir.Path);
+            _memory.SetLastDirectory(save: false, _dir.Path);
             FileDialogViewModel viewModel = Create(FileDialogOptions.ForOpen("Open", Filter, false), (_, _, _) => "bad\0name");
 
             viewModel.NewFolderCommand.Execute(null);

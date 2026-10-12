@@ -1,6 +1,8 @@
 namespace FrameAnimator.App.Infrastructure
 {
     using System;
+    using System.Windows;
+    using FrameAnimator.App.ViewModels;
     using FrameAnimator.Core.Model;
     using FrameAnimator.Core.Scripting;
 
@@ -33,6 +35,9 @@ namespace FrameAnimator.App.Infrastructure
 
         /// <summary>Yes / No question; <c>true</c> for Yes.</summary>
         Boolean AskYesNo(String message);
+
+        /// <summary>Yes / No / Cancel question; the answer is <see cref="MessageBoxResult.Yes"/>, <see cref="MessageBoxResult.No"/> or <see cref="MessageBoxResult.Cancel"/>.</summary>
+        MessageBoxResult AskYesNoCancel(String message);
     }
 
     /// <summary>Dialog services (files, modal boxes) used by the view model.</summary>
@@ -52,6 +57,9 @@ namespace FrameAnimator.App.Infrastructure
         AutomationOptions? ShowAutomate(String currentPalette);
 
         void ShowAbout();
+
+        /// <summary>Opens the animation preview window, or closes it if it is already open (it does not block the main window).</summary>
+        void TogglePreview(AnimationPreviewViewModel viewModel);
 
         /// <summary>Color picker (0xRRGGBB); <c>null</c> if cancelled.</summary>
         Int32? PickColor(Int32 initial);

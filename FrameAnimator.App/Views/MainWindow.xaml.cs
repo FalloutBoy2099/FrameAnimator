@@ -14,23 +14,21 @@ namespace FrameAnimator.App.Views
         public MainWindow()
         {
             InitializeComponent();
-            TitleBarTheme.Attach(this);
-            WindowMemory.Attach(this);
             Loaded += (_, _) => OnStateChanged(null, EventArgs.Empty);
             DataContextChanged += (_, e) =>
             {
                 if (e.OldValue is MainViewModel old)
-                    old.PropertyChanged -= OnViewModelPropertyChanged;
+                    old.FrameList.PropertyChanged -= OnFrameListPropertyChanged;
                 if (e.NewValue is MainViewModel vm)
-                    vm.PropertyChanged += OnViewModelPropertyChanged;
+                    vm.FrameList.PropertyChanged += OnFrameListPropertyChanged;
             };
         }
 
         private Boolean _syncing;
 
-        private void OnViewModelPropertyChanged(Object? sender, PropertyChangedEventArgs e)
+        private void OnFrameListPropertyChanged(Object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName != nameof(MainViewModel.SelectedFrameIndex) || Vm is not { } vm)
+            if (e.PropertyName != nameof(FrameListViewModel.SelectedFrameIndex) || Vm is not { FrameList: { } vm })
                 return;
             // the current frame (the VCL's ItemIndex) is the one that has focus, not necessarily the first one selected
             Int32 wanted = vm.SelectedFrameIndex;
@@ -51,7 +49,7 @@ namespace FrameAnimator.App.Views
 
         private void OnFrameSelectionChanged(Object sender, SelectionChangedEventArgs e)
         {
-            if (_syncing || Vm is not { } vm)
+            if (_syncing || Vm is not { FrameList: { } vm })
                 return;
             var indices = new List<Int32>();
             foreach (var item in FrameList.SelectedItems)
@@ -74,16 +72,36 @@ namespace FrameAnimator.App.Views
 
         private void OnSampleClick(Object sender, MouseButtonEventArgs e)
         {
-            if (Vm is { } vm && vm.PickSampleColorCommand.CanExecute(null))
-                vm.PickSampleColorCommand.Execute(null);
+            if (Vm is { Canvas: { } canvas } && canvas.PickSampleColorCommand.CanExecute(null))
+                canvas.PickSampleColorCommand.Execute(null);
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            // the window cannot be closed during automation
-            if (Vm is { IsBusy: true })
+            // the window cannot be closed while a script or a batch runs (stop it first)
+            if (Vm is { IsBusy: true } or { IsBatchRunning: true })
                 e.Cancel = true;
+            else if (Vm is { } vm && !vm.ConfirmClose())
+                e.Cancel = true; // unsaved changes: the user chose to keep working
             base.OnClosing(e);
+        }
+
+        // ------------------------------------------------------------------ drag and drop of files
+
+        private static String[]? DroppedFiles(DragEventArgs e)
+            => e.Data.GetDataPresent(DataFormats.FileDrop) ? e.Data.GetData(DataFormats.FileDrop) as String[] : null;
+
+        private void OnFileDragOver(Object sender, DragEventArgs e)
+        {
+            e.Effects = Vm is { } vm && DroppedFiles(e) is { } files && vm.CanDrop(files) ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void OnFileDrop(Object sender, DragEventArgs e)
+        {
+            if (Vm is { } vm && DroppedFiles(e) is { } files)
+                vm.DropFiles(files);
+            e.Handled = true;
         }
 
         // ------------------------------------------------------------------ title bar

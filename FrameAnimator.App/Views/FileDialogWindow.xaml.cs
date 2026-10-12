@@ -16,8 +16,6 @@ namespace FrameAnimator.App.Views
         public FileDialogWindow()
         {
             InitializeComponent();
-            TitleBarTheme.Attach(this);
-            WindowMemory.Attach(this);
             Loaded += (_, _) =>
             {
                 NameBox.Focus();
@@ -26,13 +24,6 @@ namespace FrameAnimator.App.Views
         }
 
         private FileDialogViewModel? ViewModel => DataContext as FileDialogViewModel;
-
-        /// <summary>Development preview (<c>--dialog open</c> switch): a ready-to-show window with its view model.</summary>
-        internal static Window CreateForPreview() => new FileDialogWindow
-        {
-            DataContext = FileDialogs.CreateViewModel(FileDialogOptions.ForOpen("Open Project",
-                DialogService.TranslateFilter("All (*.FPR,*.FRM)|*.FPR;*.FRM|Project (*.FPR)|*.FPR"), multiselect: true)),
-        };
 
         // ------------------------------------------------------------------ places and favorites (a selection opens the folder)
 

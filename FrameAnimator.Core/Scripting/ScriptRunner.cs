@@ -46,7 +46,10 @@ namespace FrameAnimator.Core.Scripting
         private Int32 _paramIndex;
         private String _lastText = "";
 
-        /// <summary>Runs the script. Returns <c>true</c> if all lines were processed (<c>false</c> if stopped or unreadable).</summary>
+        /// <summary>
+        /// Runs the script. Returns <c>true</c> if all lines were processed (<c>false</c> if stopped, cancelled between two lines through
+        /// <see cref="IUserInteraction.CancelRequested"/>, or unreadable).
+        /// </summary>
         public Boolean Run(String scriptPath)
         {
             List<String> lines;
@@ -62,7 +65,7 @@ namespace FrameAnimator.Core.Scripting
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
             {
-                UI.ShowError($"Unable to execute script '{PathHelpers.ExtractFileName(scriptPath)}'!");
+                UI.ShowError(CoreMessages.UnableToExecuteScript, PathHelpers.ExtractFileName(scriptPath));
                 return false;
             }
 
@@ -70,6 +73,8 @@ namespace FrameAnimator.Core.Scripting
             {
                 for (Int32 i = 0; i < lines.Count; i++)
                 {
+                    if (UI.CancelRequested)
+                        return false; // the user asked to stop: the lines already run stay done
                     if (SkipBlankLines && lines[i].Trim().Length == 0)
                         continue;
                     if (!RunLine(lines[i], i, scriptPath))
@@ -84,7 +89,7 @@ namespace FrameAnimator.Core.Scripting
             catch (Exception e) when (e is not OutOfMemoryException)
             {
                 UnexpectedException?.Invoke(e);
-                UI.ShowError($"Unable to execute script '{PathHelpers.ExtractFileName(scriptPath)}'!");
+                UI.ShowError(CoreMessages.UnableToExecuteScript, PathHelpers.ExtractFileName(scriptPath));
                 return false;
             }
         }
@@ -113,25 +118,25 @@ namespace FrameAnimator.Core.Scripting
             {
                 if (e.Kind != ScriptErrorKind.OperationFailed)
                 {
-                    String text = e.Kind switch
+                    UserMessage detail = e.Kind switch
                     {
-                        ScriptErrorKind.IndexOutOfRange => $"Index '{e.Text}' out of range",
-                        ScriptErrorKind.ParameterRequired => "Parameter is required",
-                        ScriptErrorKind.UnknownKeyword => $"Unknown keyword '{e.Text}'",
-                        _ => $"Invalid parameter '{e.Text}'",
+                        ScriptErrorKind.IndexOutOfRange => new UserMessage(CoreMessages.IndexOutOfRange, e.Text),
+                        ScriptErrorKind.ParameterRequired => new UserMessage(CoreMessages.ParameterRequired),
+                        ScriptErrorKind.UnknownKeyword => new UserMessage(CoreMessages.UnknownKeyword, e.Text),
+                        _ => new UserMessage(CoreMessages.InvalidParameter, e.Text),
                     };
-                    UI.ShowError($"{text}\nin line {lineIndex + 1}, parameter {_paramIndex + 1}");
+                    UI.ShowError(CoreMessages.ScriptErrorPosition, detail, lineIndex + 1, _paramIndex + 1);
                 }
                 return AskContinue(scriptPath);
             }
             catch (FormatException)
             {
-                UI.ShowError($"'{_lastText}' is not a valid integer value\nin line {lineIndex + 1}, parameter {_paramIndex + 1}");
+                UI.ShowError(CoreMessages.ScriptErrorPosition, new UserMessage(CoreMessages.InvalidIntegerValue, _lastText), lineIndex + 1, _paramIndex + 1);
                 return AskContinue(scriptPath);
             }
         }
 
-        private Boolean AskContinue(String scriptPath) => UI.Confirm($"Continue executing script '{PathHelpers.ExtractFileName(scriptPath)}'?");
+        private Boolean AskContinue(String scriptPath) => UI.Confirm(CoreMessages.ContinueExecutingScript, PathHelpers.ExtractFileName(scriptPath));
 
         // ------------------------------------------------------------------ parameter extraction
 

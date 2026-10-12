@@ -7,8 +7,6 @@ namespace FrameAnimator.App.Views
         public OffsetDialog()
         {
             InitializeComponent();
-            TitleBarTheme.Attach(this);
-            WindowMemory.Attach(this);
             Loaded += (_, _) =>
             {
                 XBox.Focus();
