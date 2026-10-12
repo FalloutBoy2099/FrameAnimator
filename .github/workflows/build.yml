@@ -1,0 +1,69 @@
+name: Build
+
+# Builds and tests the solution, then publishes the two Windows x64 executables:
+#   FrameAnimator.exe      needs the .NET 10 Desktop Runtime
+#   FrameAnimator-NET.exe  has the .NET runtime inside
+# A tag such as v1.2.3 also creates a GitHub release with both files.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build FrameAnimator.sln --configuration Release
+
+      - name: Test
+        run: dotnet test FrameAnimator.sln --configuration Release --no-build
+
+      - name: Publish the executables
+        shell: pwsh
+        run: ./Publish.ps1 -Configuration Release -Runtime win-x64
+
+      - name: Upload the executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: FrameAnimator-win-x64
+          path: |
+            publish/FrameAnimator.exe
+            publish/FrameAnimator-NET.exe
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: FrameAnimator-win-x64
+          path: publish
+
+      - name: Create the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            publish/FrameAnimator.exe
+            publish/FrameAnimator-NET.exe
+          generate_release_notes: true

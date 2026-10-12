@@ -82,6 +82,13 @@ XAML files are formatted with [XamlStyler](https://github.com/Xavalon/XamlStyler
 (about 59 MB, .NET runtime included). Options: `-Configuration Release|Debug`, `-Runtime win-x64|win-x86|win-arm64`. The previous
 `publish` folder is replaced only when both builds succeed.
 
+### Continuous integration
+
+`.github/workflows/build.yml` (GitHub Actions, `windows-latest`) builds the solution, runs the tests and runs `Publish.ps1` on every
+push to `main`, pull request and manual run; the two executables (`FrameAnimator.exe` and `FrameAnimator-NET.exe`, Windows x64) are
+attached to the run as the `FrameAnimator-win-x64` artifact. Pushing a tag such as `v1.2.3` also creates a GitHub release with both
+files.
+
 ## Graphical interface
 
 * **Window**: title bar drawn in the application theme (menus, title, *Theme* and *Language* buttons, system buttons), toolbar with
